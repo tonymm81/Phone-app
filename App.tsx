@@ -20,10 +20,11 @@ export default function App() {
   const [chooseForecastView, setChooseForecastView] = useState<boolean>(true)
   const [choosePhotosView, setChoosePhotosView] = useState<boolean>(true)
 
-  const whereShallWeNavigate = (thePath : string) : void =>{
+  const whereShallWeNavigate = (thePath : string) : void =>{// here is aaplication navigate
     if (thePath === "forecast"){
       setChooseForecastView(false)
       setChooseStartView(true)
+      
       console.log("fore")
     }
     if(thePath === "startview"){
@@ -50,7 +51,7 @@ export default function App() {
   return (
     
     <Provider>
-   <Appbar.Header>
+   <Appbar.Header style={styles.header}>
       <Appbar.Content title="Just a phone app" />
       </Appbar.Header>
     <View style={styles.mainScroll}>
@@ -61,12 +62,25 @@ export default function App() {
            style={styles.menuStyles}
           visible={visible}
           onDismiss={closeMenu}
-          anchor={<Button onPress={openMenu}>Show menu</Button>}>
+          anchor={<Button onPress={openMenu} 
+          >Show menu</Button>}>
             
-           <Menu.Item onPress={() => whereShallWeNavigate("startview")} title="Go home page" key="1"/>
-            <Menu.Item onPress={() => whereShallWeNavigate("forecast")} title="Go forecast view" key="2"/>
-            <Menu.Item onPress={() => whereShallWeNavigate("photos")} title="Go photos" key="3"/>
-            <Menu.Item onPress={() => whereShallWeNavigate("tracker")} title="Go gps tracker" key="4" />
+           <Menu.Item onPress={() => whereShallWeNavigate("startview")} 
+                      title="Go home page"  
+                      key="1"
+                      leadingIcon="undo"/>
+            <Menu.Item onPress={() => whereShallWeNavigate("forecast")} 
+                        title="Go forecast view" 
+                        key="2"
+                        leadingIcon="cloud"/>
+            <Menu.Item onPress={() => whereShallWeNavigate("photos")} 
+                        title="Go photos" 
+                        key="3"
+                        leadingIcon="camera"/>
+            <Menu.Item onPress={() => whereShallWeNavigate("tracker")} 
+                        title="Go gps tracker" 
+                        key="4"
+                        leadingIcon="crosshairs-gps" />
             
          
           
@@ -93,15 +107,26 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  menuStyles : {
-    minHeight: "50%"
+  header : {
+    justifyContent : "center",
+    backgroundColor : "blue",
+    margin:5
   },
+  menuStyles : {
+    minHeight: "50%",
+    width:"50%",
+    margin:10,
+    
+  },
+  
   mainMenu : {
     paddingTop: 50,
     marginRight : "50%",
     flexDirection: 'row',
     justifyContent: 'center',
-    minHeight: "50%"
+    minHeight: "10%",
+    backgroundColor : "green",
+    width:"100%"
   },
   mainScroll : {
     minHeight : "50%",
