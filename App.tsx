@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MenuView } from '@react-native-menu/menu';
 import { Button, Menu, Divider, PaperProvider, Provider, Appbar } from 'react-native-paper';
 import React, { useState } from 'react';
@@ -7,8 +7,7 @@ import Forecast from './components/Forecast';
 import Photo from './components/Photo';
 import Tracker from './components/Tracker';
 import StartPage from './components/StartPage';
-
-
+import { JustAppProvider } from './context/JustAppContext';
 
 
 export default function App() {
@@ -20,117 +19,144 @@ export default function App() {
   const [chooseForecastView, setChooseForecastView] = useState<boolean>(true)
   const [choosePhotosView, setChoosePhotosView] = useState<boolean>(true)
 
-  const whereShallWeNavigate = (thePath : string) : void =>{// here is aaplication navigate
-    if (thePath === "forecast"){
+  const whereShallWeNavigate = (thePath: string): void => {// here is aaplication navigate
+    if (thePath === "forecast") {
       setChooseForecastView(false)
       setChooseStartView(true)
-      
+      closeMenu()
+
       console.log("fore")
     }
-    if(thePath === "startview"){
+    if (thePath === "startview") {
       console.log("starrrrt")
       setChooseForecastView(true)
       setChooseStartView(true)
+      closeMenu()
 
     }
-    if (thePath === "photos"){
+    if (thePath === "photos") {
       console.log("photo")
       setChooseStartView(false)
-      
+
       setChoosePhotosView(true)
+      closeMenu()
     }
-    if (thePath === "tracker"){
+    if (thePath === "tracker") {
       console.log("track")
       setChooseStartView(false)
-      
+
       setChoosePhotosView(false)
+      closeMenu()
 
     }
   }
 
   return (
-    
-    <Provider>
-   <Appbar.Header style={styles.header}>
-      <Appbar.Content title="Just a phone app" />
-      </Appbar.Header>
-    <View style={styles.mainScroll}>
-     <PaperProvider>
-      <View
-        style={styles.mainMenu}>
-        <Menu
-           style={styles.menuStyles}
-          visible={visible}
-          onDismiss={closeMenu}
-          anchor={<Button onPress={openMenu} 
-          >Show menu</Button>}>
-            
-           <Menu.Item onPress={() => whereShallWeNavigate("startview")} 
-                      title="Go home page"  
-                      key="1"
-                      leadingIcon="undo"/>
-            <Menu.Item onPress={() => whereShallWeNavigate("forecast")} 
-                        title="Go forecast view" 
-                        key="2"
-                        leadingIcon="cloud"/>
-            <Menu.Item onPress={() => whereShallWeNavigate("photos")} 
-                        title="Go photos" 
-                        key="3"
-                        leadingIcon="camera"/>
-            <Menu.Item onPress={() => whereShallWeNavigate("tracker")} 
-                        title="Go gps tracker" 
-                        key="4"
-                        leadingIcon="crosshairs-gps" />
-            
-         
-          
-        </Menu>
-      </View>
-    </PaperProvider>
-      <StatusBar style="auto" />
-    </View>
-    <ScrollView>
-      {chooseStartView ? 
-      chooseForecastView ?
-          <StartPage/>  
-              : 
-          <Forecast/>
-      : 
-      choosePhotosView ?
-                      <Photo/>
-                         :   
-                         <Tracker/> }
 
-    </ScrollView>
+    <Provider>
+      <JustAppProvider>
+        <Appbar.Header style={styles.header}>
+          <Appbar.Content title="Just a phone app" />
+        </Appbar.Header>
+        <View style={styles.mainScroll}>
+
+          <PaperProvider>
+
+            <View
+            >
+              <Menu
+                style={styles.menuStyles}
+                statusBarHeight={150}
+                visible={visible}
+                onDismiss={closeMenu}
+                anchorPosition="top"
+                anchor={<Button onPress={openMenu}
+                >Show menu</Button>}>
+
+                <Menu.Item onPress={() => whereShallWeNavigate("startview")}
+                  title="Go home page"
+                  key="1"
+                  leadingIcon="undo" />
+                <Menu.Item onPress={() => whereShallWeNavigate("forecast")}
+                  title="Go forecast view"
+                  key="2"
+                  leadingIcon="cloud" />
+                <Menu.Item onPress={() => whereShallWeNavigate("photos")}
+                  title="Go photos"
+                  key="3"
+                  leadingIcon="camera" />
+                <Menu.Item onPress={() => whereShallWeNavigate("tracker")}
+                  title="Go gps tracker"
+                  key="4"
+                  leadingIcon="crosshairs-gps" />
+
+
+
+              </Menu>
+            </View>
+
+          </PaperProvider>
+
+
+          <StatusBar style="auto" />
+        </View>
+        <ScrollView>
+          {chooseStartView ?
+            chooseForecastView ?
+              <StartPage />
+              :
+              <Forecast />
+            :
+            choosePhotosView ?
+              <Photo />
+              :
+              <Tracker />}
+
+        </ScrollView>
+      </JustAppProvider>
     </Provider>
   );
 }
 
 const styles = StyleSheet.create({
-  header : {
-    justifyContent : "center",
-    backgroundColor : "blue",
-    margin:5
+  header: {
+    justifyContent: "center",
+    backgroundColor: "blue",
+    margin: 5
   },
-  menuStyles : {
-    minHeight: "50%",
+  menuStyles: {
+    /*height: "auto",
     width:"50%",
-    margin:10,
-    
+    margin:10,*/
+    backgroundColor: "#222",
+    borderWidth: 2,
+    top: 40,
+    left: -100,
+    position: 'absolute',
+    zIndex: 100
+    // backgroundColor: "#222",
+
   },
-  
-  mainMenu : {
+
+  mainMenu: {
+    /*flex : 1,
     paddingTop: 50,
     marginRight : "50%",
     flexDirection: 'row',
     justifyContent: 'center',
-    minHeight: "10%",
-    backgroundColor : "green",
-    width:"100%"
+    minHeight: "auto",
+    backgroundColor : "green",*/
+    height: 150,
+
+    width: "100%"
   },
-  mainScroll : {
-    minHeight : "50%",
-    alignItems : "center"
+  mainScroll: {
+    zIndex: 100,
+    minHeight: "10%",
+    height: "auto",
+
+    padding: 5,
+    alignItems: "center"
   },
   container: {
     flex: 1,
