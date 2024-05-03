@@ -18,3 +18,13 @@
 - forecast view is not yet ready. I have to come back to this issue.
 - i add some styles to menu and i notice that i have to build databases and use context first, and then i can continue developoing programs features.
 
+
+## version 103
+- I made the JustApp context. There all datahandling happens and there is database and apicalls also. I also plan that we cvan get the forecast based on devices location. I am not sure if the weatherapi allows that.
+- Now getting forecast and saving that to database works fine, and i also made some graphics to forecast.
+
+### bug:
+- forecast view time stamp wont show correct.
+- menu item is too small.
+
+
