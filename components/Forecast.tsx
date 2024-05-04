@@ -63,7 +63,7 @@ const Forecast: React.FC = (): React.ReactElement => {
             visible={showDialog}
             onDismiss={() => setShowDialog(false)}
           >
-            <Dialog.Title>Lisää uusi ostos</Dialog.Title>
+            <Dialog.Title>Search for town or city name</Dialog.Title>
             <Dialog.Content>
               <TextInput 
                 label="search"
