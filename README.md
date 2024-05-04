@@ -28,3 +28,12 @@
 - menu item is too small.
 
 
+## version 104
+- Added the dialog to the forecast app. There user can search with keyword the city. I also add some buttons in forecast view.
+- forecast view delay bug fixed. Next thing to do is make a gps coondinates search function in context file.
+- Now user can search forecast by phone coordinates and search word.
+- If we have some time, we could make error handling to forecast.
+
+### bug:
+- Usestate delay is teasing again. Figure out how to deal it.
+

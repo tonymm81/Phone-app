@@ -1,6 +1,7 @@
 import React, { createContext, useEffect, useMemo, useRef, useState } from 'react';
 import * as SQLite from 'expo-sqlite';
 import { ENV_VAR } from "@env" 
+import * as Location from 'expo-location';
 
 
 
@@ -123,27 +124,58 @@ const get_location = async (city_name: string, country_code: string): Promise<an
 export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactElement => { // tämä toimittaan sen tiedon propseilla
   const [cityForecast, setCityForecast] = useState<string>("Tampere")
   const [forecalsDB, setForecastDB] = useState<forecastOld[]>([]);
+  const [allowForecast, setAllowForecast] = useState<boolean>(false)
+  const [showDialog, setShowDialog] = useState<boolean>(false)
+  const [location, setLocation] = useState<Location.LocationObject>();
+  const [errorMsg, setErrorMsg] = useState<string>("");
 
-  const get_location_user = async (userFeed : string) =>{
+  const get_location_user = async (userFeed : string) =>{ // here we get location Coordinates
     setCityForecast(userFeed)
     let location_lat = await get_location(userFeed, "fi")
     //console.log("from context", location_lat)
     return location_lat 
   }
-  const getForecatasUser = async (userFeed : string) =>{
-    let location_code = await get_location_user(userFeed)
-    let getForecast = await get_forecast(location_code)
-    //console.log("from context", getForecast)
-    save_forecast_db(getForecast)
-    return getForecast
+  const getForecatasUser = async (userFeed : string) =>{ // Here we get forrecast what based on given coordinates
+    if (allowForecast === true){
+      let location_code = await get_location_user(userFeed)
+      let getForecast = await get_forecast(location_code)
+      //console.log("from context", getForecast)
+      save_forecast_db(getForecast)
+      setAllowForecast(false)
+      setShowDialog(false)
+      return 
+    }else {
+      setShowDialog(false)
+      return {}
+    }
+   
   }
 
-  const getForecast_based_gps = () =>{
-    return
+  const getForecast_based_gps = async () =>{
+   let value = await getPhoneLocation()
+   if(value){
+    let newForecast = await get_forecast([location?.coords.latitude, location?.coords.longitude])
+    console.log("did we get loaction based fc", newForecast)
+    save_forecast_db(newForecast)
+   }else{
+
+   }
+
   }
 
-  const getPhoneLocation = () =>{
-    return
+  const getPhoneLocation = async() =>{
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      setErrorMsg('Permission to access location was denied');
+      return false;
+    }else{
+      let locationTemp = await Location.getCurrentPositionAsync({});
+      console.log("this location",locationTemp)
+      setLocation(locationTemp);
+      setTimeout(()=> setLocation(locationTemp), 500)
+
+      return true
+    }
   }
   const deleteForecast = () : void => {
 
@@ -165,7 +197,7 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
         (tx : SQLite.SQLTransaction) => {
           
           tx.executeSql(`INSERT INTO forecastOld (City, timestamp, max_temp, min_temp, description, icon) VALUES (?,?,?,?,?,?)`, 
-            [cityForecast ,wholeForecast['list'][i]['dt'], wholeForecast['list'][i]['main']['temp_max'], wholeForecast['list'][i]['main']['temp_min'] , wholeForecast['list'][i]['weather'][0]['main'] , wholeForecast['list'][i]['weather'][0]['icon'] ],
+            [wholeForecast.city.name ,wholeForecast['list'][i]['dt'], wholeForecast['list'][i]['main']['temp_max'], wholeForecast['list'][i]['main']['temp_min'] , wholeForecast['list'][i]['weather'][0]['main'] , wholeForecast['list'][i]['weather'][0]['icon'] ],
             (_tx : SQLite.SQLTransaction, rs : SQLite.SQLResultSet) => {
               console.log("did we save")
               searchForecastDB(); // tällä synkataan tietokanta lisäyksen jälkeen
@@ -183,6 +215,7 @@ const searchForecastDB = (): void =>{
         tx.executeSql(`SELECT * FROM forecastOld`, [], 
           (_tx : SQLite.SQLTransaction, rs : SQLite.SQLResultSet) => {// tää on etr mitä me tehdään niille tuloksille jokka kannasta tulee.
             setForecastDB(rs.rows._array); // pusketaan interfaceen.
+            setTimeout(()=> setForecastDB(rs.rows._array), 500)
           });
       }, 
       (err: SQLite.SQLError) => console.log(err));
@@ -193,7 +226,12 @@ const searchForecastDB = (): void =>{
                                     get_location_user,
                                     getForecatasUser,
                                     forecalsDB,
-                                    searchForecastDB
+                                    searchForecastDB,
+                                    getForecast_based_gps,
+                                    getPhoneLocation,
+                                    setAllowForecast,
+                                    showDialog,
+                                    setShowDialog
                                     }}>
             {props.children}
     </JustAppContext.Provider>
