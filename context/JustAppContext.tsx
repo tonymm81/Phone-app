@@ -2,7 +2,7 @@ import React, { createContext, useEffect, useMemo, useRef, useState } from 'reac
 import * as SQLite from 'expo-sqlite';
 import { ENV_VAR } from "@env" 
 import * as Location from 'expo-location';
-
+import { Camera, CameraCapturedPicture, PermissionResponse } from 'expo-camera';
 
 
 export const JustAppContext: React.Context<any> = createContext(undefined); // huomaa exportti, muuten ei toimi
@@ -122,17 +122,24 @@ const get_location = async (city_name: string, country_code: string): Promise<an
 
 
 export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactElement => { // tämä toimittaan sen tiedon propseilla
-  const [cityForecast, setCityForecast] = useState<string>("Tampere")
+  const [cityForecast, setCityForecast] = useState<string>("Tampere") //forecast values
   const [forecalsDB, setForecastDB] = useState<forecastOld[]>([]);
   const [allowForecast, setAllowForecast] = useState<boolean>(false)
   const [showDialog, setShowDialog] = useState<boolean>(false)
   const [location, setLocation] = useState<Location.LocationObject>();
   const [errorMsg, setErrorMsg] = useState<string>("");
 
+  const cameraRef: any = useRef<Camera>();// cameras values
+  const [info, setInfo] = useState<string>()
+  const [openCamera, setOpenCamera] = useState<boolean>(false)
+  const [photosFromDb, setPhotosFromDb] = useState<Photos[]>([]) 
+  const [allowTakePhoto, setAllowTakePhoto] = useState<boolean>(false) 
+  const [showDialogPhoto, setShowDialogPhoto] = useState<boolean>(false)
+  const [savedPicture, setSavedPicture] = useState<CameraCapturedPicture>()
+// forecast functions
   const get_location_user = async (userFeed : string) =>{ // here we get location Coordinates
     setCityForecast(userFeed)
     let location_lat = await get_location(userFeed, "fi")
-    //console.log("from context", location_lat)
     return location_lat 
   }
   const getForecatasUser = async (userFeed : string) =>{ // Here we get forrecast what based on given coordinates
@@ -220,6 +227,58 @@ const searchForecastDB = (): void =>{
       }, 
       (err: SQLite.SQLError) => console.log(err));
 }
+
+const startTheCamera = async (): Promise<void> => {// käynnistä kamera ja kysy lupa, jos lupa on avataan kuvaustila
+  
+  if (!allowTakePhoto) {
+    const cameraPermission: PermissionResponse = await Camera.requestCameraPermissionsAsync();
+    console.log(cameraPermission.granted, cameraPermission)
+    setOpenCamera(cameraPermission.granted)
+    setInfo((!cameraPermission.granted) ? "No permission to use a camera." : "")
+    setAllowTakePhoto(true)
+  }
+  if (allowTakePhoto) {
+    setOpenCamera(true)
+  }
+}
+
+const takePhoto = async (): Promise<void> => { // räpsitään kuva
+
+  setInfo("...Just wait a moment")
+  const pohtoTemp: CameraCapturedPicture = await cameraRef.current.takePictureAsync()  
+  setOpenCamera(false)// kuvaustila pois ja haetaan kannan kuvat
+  setInfo("")
+  console.log("ca mera", pohtoTemp)
+  setSavedPicture(pohtoTemp)
+  setShowDialogPhoto(true)
+  //haeKuvat();
+}
+
+const savePhotoToDb = (imagetext : string, headliner : string) : void =>{
+  getPhoneLocation()
+  db.transaction( // tankataan kantaan otettu kuva
+      (tx: SQLite.SQLTransaction) => {
+        tx.executeSql(`INSERT INTO Photos (name, imageText, location_lon, location_lat, Device_path, time_photo) VALUES (?, ?, ?, ?, ?, ?)`,    
+          [headliner, imagetext, location?.coords.longitude? location.coords.longitude : 0, location?.coords.latitude ? location?.coords.latitude : 0, savedPicture?.uri ? savedPicture?.uri : "", location?.timestamp ? location?.timestamp : 0],
+          (_tx: SQLite.SQLTransaction, rs: SQLite.SQLResultSet) => {
+          });
+      },
+      (err: SQLite.SQLError) => setInfo(String(err)));
+      setShowDialogPhoto(false)
+      getPhotosDb()
+}
+const getPhotosDb = () :void =>{
+  db.transaction( // huomaa tyypitykset
+      (tx: SQLite.SQLTransaction) => {
+        tx.executeSql(`SELECT * FROM Photos `, [],
+          (_tx: SQLite.SQLTransaction, rs: SQLite.SQLResultSet) => {
+            setPhotosFromDb(rs.rows._array); 
+            setTimeout(() => setPhotosFromDb(rs.rows._array), 500)
+          });
+      },
+      (err: SQLite.SQLError) => console.log(err));
+    
+}
  
   return (
     <JustAppContext.Provider value={{
@@ -231,7 +290,19 @@ const searchForecastDB = (): void =>{
                                     getPhoneLocation,
                                     setAllowForecast,
                                     showDialog,
-                                    setShowDialog
+                                    setShowDialog,
+                                    startTheCamera,
+                                    takePhoto,
+                                    allowTakePhoto,
+                                    cameraRef,
+                                    info,
+                                    setOpenCamera,
+                                    openCamera,
+                                    savePhotoToDb,
+                                    showDialogPhoto,
+                                    setShowDialogPhoto,
+                                    getPhotosDb,
+                                    photosFromDb
                                     }}>
             {props.children}
     </JustAppContext.Provider>

@@ -37,3 +37,10 @@
 ### bug:
 - Usestate delay is teasing again. Figure out how to deal it.
 
+
+## version 105
+- lets start to build issue11 camera app.
+- Needed camera app functions made to context. Camera gives some error but i dont know why. I delete all graphics components from camera and paste those back, it start working.
+- I make a dialog what opens after taking thee photo. Then user can add photo headline and photo text. Data and photos are saved to database.
+
+- Next plan is loop out photos from database.

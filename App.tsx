@@ -58,6 +58,7 @@ export default function App() {
         <Appbar.Header style={styles.header}>
           <Appbar.Content title="Just a phone app" />
         </Appbar.Header>
+       
         <View style={styles.mainScroll}>
 
           <PaperProvider>
@@ -115,6 +116,7 @@ export default function App() {
         </ScrollView>
       </JustAppProvider>
     </Provider>
+    
   );
 }
 
