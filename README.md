@@ -24,8 +24,8 @@
 - Now getting forecast and saving that to database works fine, and i also made some graphics to forecast.
 
 ### bug:
-- forecast view time stamp wont show correct.
-- menu item is too small.
+- forecast view time stamp wont show correct.(fixed)
+- menu item is too small.(fixed)
 
 
 ## version 104
@@ -35,7 +35,7 @@
 - If we have some time, we could make error handling to forecast.
 
 ### bug:
-- Usestate delay is teasing again. Figure out how to deal it.
+- Usestate delay is teasing again. Figure out how to deal it. (fixed)
 
 
 ## version 105
@@ -44,3 +44,12 @@
 - I make a dialog what opens after taking thee photo. Then user can add photo headline and photo text. Data and photos are saved to database.
 
 - Next plan is loop out photos from database.
+
+## version 106
+- Starting to make photoapp graphics. There is still missing some list view and photoview and buttons. 
+- Now the photo view is working. Delete feature has to make to app.
+- photo app is ready now. User can take a photo, and name and imagetext tophoto and also user can delete photo. App shows the location of taken photo and time also, when photo is taken.
+
+### bug : (make issue later if time left)
+- Still getting warning two children have the same id
+- when taking first picture, the screen is empty but after first image app works really fine.
