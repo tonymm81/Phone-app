@@ -53,3 +53,8 @@
 ### bug : (make issue later if time left)
 - Still getting warning two children have the same id
 - when taking first picture, the screen is empty but after first image app works really fine.
+- this camera app have the bug, when the first time load seems to be empty.
+
+
+## version 107
+- I make the startpage. Just adding some images and show what kind of applications this program keeps inside.
