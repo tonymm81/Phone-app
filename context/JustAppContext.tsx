@@ -30,7 +30,7 @@ db.transaction( // tää on sqgl kysely sijainneista
 );
 db.transaction( // tää on sqgl kysely sijainneista
   (tx: SQLite.SQLTransaction) => {
-    //tx.executeSql(`DROP TABLE DartsTikka`); // tankataan dartsimatsin tulokset tänne
+    //tx.executeSql(`DROP TABLE Photos`); // tankataan dartsimatsin tulokset tänne
     tx.executeSql(`CREATE TABLE IF NOT EXISTS Photos (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT,
@@ -135,6 +135,7 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
   const [photosFromDb, setPhotosFromDb] = useState<Photos[]>([]) 
   const [allowTakePhoto, setAllowTakePhoto] = useState<boolean>(false) 
   const [showDialogPhoto, setShowDialogPhoto] = useState<boolean>(false)
+  const [showDialogdelete, setShowDialogdelete] = useState<boolean>(false)
   const [savedPicture, setSavedPicture] = useState<CameraCapturedPicture>()
 // forecast functions
   const get_location_user = async (userFeed : string) =>{ // here we get location Coordinates
@@ -162,7 +163,7 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
    let value = await getPhoneLocation()
    if(value){
     let newForecast = await get_forecast([location?.coords.latitude, location?.coords.longitude])
-    console.log("did we get loaction based fc", newForecast)
+    //console.log("did we get loaction based fc", newForecast)
     save_forecast_db(newForecast)
    }else{
 
@@ -177,7 +178,7 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
       return false;
     }else{
       let locationTemp = await Location.getCurrentPositionAsync({});
-      console.log("this location",locationTemp)
+      //console.log("this location",locationTemp)
       setLocation(locationTemp);
       setTimeout(()=> setLocation(locationTemp), 500)
 
@@ -206,7 +207,7 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
           tx.executeSql(`INSERT INTO forecastOld (City, timestamp, max_temp, min_temp, description, icon) VALUES (?,?,?,?,?,?)`, 
             [wholeForecast.city.name ,wholeForecast['list'][i]['dt'], wholeForecast['list'][i]['main']['temp_max'], wholeForecast['list'][i]['main']['temp_min'] , wholeForecast['list'][i]['weather'][0]['main'] , wholeForecast['list'][i]['weather'][0]['icon'] ],
             (_tx : SQLite.SQLTransaction, rs : SQLite.SQLResultSet) => {
-              console.log("did we save")
+              //console.log("did we save")
               searchForecastDB(); // tällä synkataan tietokanta lisäyksen jälkeen
 
             });
@@ -232,7 +233,7 @@ const startTheCamera = async (): Promise<void> => {// käynnistä kamera ja kysy
   
   if (!allowTakePhoto) {
     const cameraPermission: PermissionResponse = await Camera.requestCameraPermissionsAsync();
-    console.log(cameraPermission.granted, cameraPermission)
+    //console.log(cameraPermission.granted, cameraPermission)
     setOpenCamera(cameraPermission.granted)
     setInfo((!cameraPermission.granted) ? "No permission to use a camera." : "")
     setAllowTakePhoto(true)
@@ -248,7 +249,7 @@ const takePhoto = async (): Promise<void> => { // räpsitään kuva
   const pohtoTemp: CameraCapturedPicture = await cameraRef.current.takePictureAsync()  
   setOpenCamera(false)// kuvaustila pois ja haetaan kannan kuvat
   setInfo("")
-  console.log("ca mera", pohtoTemp)
+  //console.log("ca mera", pohtoTemp)
   setSavedPicture(pohtoTemp)
   setShowDialogPhoto(true)
   //haeKuvat();
@@ -256,16 +257,18 @@ const takePhoto = async (): Promise<void> => { // räpsitään kuva
 
 const savePhotoToDb = (imagetext : string, headliner : string) : void =>{
   getPhoneLocation()
+  if (location?.coords.latitude  && location.coords.longitude && location.timestamp && savedPicture){
   db.transaction( // tankataan kantaan otettu kuva
       (tx: SQLite.SQLTransaction) => {
         tx.executeSql(`INSERT INTO Photos (name, imageText, location_lon, location_lat, Device_path, time_photo) VALUES (?, ?, ?, ?, ?, ?)`,    
-          [headliner, imagetext, location?.coords.longitude? location.coords.longitude : 0, location?.coords.latitude ? location?.coords.latitude : 0, savedPicture?.uri ? savedPicture?.uri : "", location?.timestamp ? location?.timestamp : 0],
+          [headliner, imagetext, location.coords.longitude, location.coords.latitude, savedPicture.uri , location.timestamp],
           (_tx: SQLite.SQLTransaction, rs: SQLite.SQLResultSet) => {
           });
       },
       (err: SQLite.SQLError) => setInfo(String(err)));
       setShowDialogPhoto(false)
       getPhotosDb()
+    }
 }
 const getPhotosDb = () :void =>{
   db.transaction( // huomaa tyypitykset
@@ -273,11 +276,25 @@ const getPhotosDb = () :void =>{
         tx.executeSql(`SELECT * FROM Photos `, [],
           (_tx: SQLite.SQLTransaction, rs: SQLite.SQLResultSet) => {
             setPhotosFromDb(rs.rows._array); 
-            setTimeout(() => setPhotosFromDb(rs.rows._array), 500)
+            setTimeout(() => setPhotosFromDb(rs.rows._array), 800)
+            console.log("is there any images", photosFromDb)
           });
       },
       (err: SQLite.SQLError) => console.log(err));
     
+}
+const deletePhoto = (index : number) :void =>{
+  db.transaction(// SijaintiAppi taulun id on sama kuin kuvvatJemma taulun merkintä_id
+  (tx : SQLite.SQLTransaction) => {
+    tx.executeSql(`DELETE FROM Photos WHERE id = ${index}`, [], 
+      (_tx : SQLite.SQLTransaction, rs : SQLite.SQLResultSet) => {
+        
+      });
+  }, 
+  
+  (err: SQLite.SQLError) => console.log(err));
+  setShowDialogdelete(false)
+  getPhotosDb()
 }
  
   return (
@@ -302,7 +319,10 @@ const getPhotosDb = () :void =>{
                                     showDialogPhoto,
                                     setShowDialogPhoto,
                                     getPhotosDb,
-                                    photosFromDb
+                                    photosFromDb,
+                                    deletePhoto,
+                                    showDialogdelete,
+                                    setShowDialogdelete
                                     }}>
             {props.children}
     </JustAppContext.Provider>

@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View, Image, ScrollView, StatusBar, Modal } from 'react-native';
-import {  Appbar, Button, Dialog, FAB, Portal, Provider, TextInput } from 'react-native-paper';
+import {  Appbar, Button, Dialog, FAB, List, Portal, Provider, TextInput } from 'react-native-paper';
 import { useContext,  useEffect,  useMemo, useRef, useState } from 'react';
 import { JustAppContext, Photos } from '../context/JustAppContext';
 import { Camera } from 'expo-camera';
@@ -11,6 +11,7 @@ const Photo : React.FC = () : React.ReactElement => {
     
     const texthandler = useRef("")
     const texthandlerHeadliner = useRef("")
+    const deleteHandler = useRef(0)
     const {
             cameraRef,
             info,
@@ -22,7 +23,10 @@ const Photo : React.FC = () : React.ReactElement => {
             showDialogPhoto,
             setShowDialogPhoto,
             getPhotosDb,
-            photosFromDb
+            photosFromDb,
+            deletePhoto,
+            showDialogdelete,
+            setShowDialogdelete
                             } = useContext(JustAppContext);
     const [showListGraphics, setShowListGraphics] = useState<boolean>(false)
 
@@ -31,14 +35,25 @@ const Photo : React.FC = () : React.ReactElement => {
     }
     
     const handleInputPhotoHeadline = (input : string):void =>{
-      texthandler.current = input
+      texthandlerHeadliner.current = input
+    }
+    const saveDeleteImageIndex =(indexImg : number) : void =>{
+      deleteHandler.current = indexImg
+      setShowDialogdelete(true)
+
     }
     useEffect(() => {
       getPhotosDb()
       if (photosFromDb.length > 0){
         setShowListGraphics(true)
       }else{
-        setShowListGraphics(false)
+        getPhotosDb()
+        if (photosFromDb.length > 0){
+          setShowListGraphics(true)
+        }else{
+          setShowListGraphics(false)
+
+        }
       }
 
   }, []);
@@ -48,20 +63,20 @@ const Photo : React.FC = () : React.ReactElement => {
       
     <View style={styles.container}>
       <Portal>
-      <Camera style={styles.kuvaustila} ref={cameraRef } onMountError={()=>alert("ei")}>
+      <Camera style={styles.cameraMode} ref={cameraRef } onMountError={()=>alert("ei")}>
 
       {(Boolean(info))
           ? <View><Text style={{ color: "#fff" }}>{info}</Text></View>
           : <View><Text></Text></View>}
 
         <FAB
-          style={styles.nappiOtaKuva}
+          style={styles.buttoTakePhoto}
           icon="camera"
           label=""
           onPress={takePhoto} />
 
         <FAB
-          style={styles.nappiSulje}
+          style={styles.buttonClose}
           icon="close"
           label=""
           onPress={() => setOpenCamera(false)} />
@@ -75,9 +90,30 @@ const Photo : React.FC = () : React.ReactElement => {
         icon="camera"
         onPress={() => startTheCamera()}>Take a new photo
       </Button>
-      {showListGraphics ? <Text>Photos from device</Text>
-      
-      
+      {showListGraphics ? <><Text>Photos from device</Text><View>
+          {photosFromDb.map((photo: Photos, index: number) => (
+            <><View style={styles.container} key={index}>
+              <Image
+                key={index}
+                style={styles.image}
+                source={{ uri: photo.Device_path }} />
+            </View>
+            <List.Item
+                 style={styles.list}
+                  title={` photo name: ${photo.name}`}
+                  key={index}
+                  description={`Photo text : ${photo.imageText} And location: ${photo.location_lat}, ${photo.location_lon} and time: ${new Date(photo.time_photo).toLocaleString()} `}
+                  descriptionNumberOfLines={4}
+                   />
+            <Button style={{ marginTop: 20 }}
+              mode="contained"
+              icon="minus"
+              key={index}
+              onPress={() => saveDeleteImageIndex(Number(photo.id))}>Delete image
+              </Button></>
+          ))}
+
+        </View></>
       
       : <Text>No photos, start to add some</Text>}
       <Portal>
@@ -102,6 +138,19 @@ const Photo : React.FC = () : React.ReactElement => {
               <Button onPress={() => savePhotoToDb(texthandler.current, texthandlerHeadliner.current)}>save</Button>
             </Dialog.Actions>
           </Dialog>
+        </Portal>
+        <Portal>
+          <Dialog
+            visible={showDialogdelete}
+            onDismiss={() => setShowDialogPhoto(false)}
+          >
+            <Dialog.Title>Do you want to delete the image</Dialog.Title>
+           
+            <Dialog.Actions>
+              <Button onPress={() => deletePhoto(deleteHandler.current) }>delete</Button>
+              <Button onPress={() => setShowDialogdelete(false) }>Go back</Button>
+            </Dialog.Actions>
+          </Dialog>
         </Portal></>
         
 
@@ -109,60 +158,47 @@ const Photo : React.FC = () : React.ReactElement => {
 }
 
 const styles = StyleSheet.create({
-  tekstit: {
-    padding: 10,
-    margin: 10
+  
+  list: {
+    backgroundColor: 'gray',
+    margin : 10,
   },
   container: {
-    //flex: 1,
-    //justifyContent: 'center',
-    // alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+     alignItems: 'center',
   },
-  kuvaustila: {
+  cameraMode: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  nappiSulje: {
+  buttonClose: {
     position: 'absolute',
     margin: 20,
     bottom: 0,
     right: 0
 
   },
-  nappiUusikuva: {
-    position: 'absolute',
-    margin: 20,
-    top: 0,
-    right: 0
-  },
-  nappipoista: {
+ 
+  buttoTakePhoto: {
     position: 'absolute',
     margin: 20,
     bottom: 0,
     left: 0
   },
-  nappiOtaKuva: {
-    position: 'absolute',
-    margin: 20,
-    bottom: 0,
-    left: 0
-  },
-  kuva: {
+  image: {
     width: 320,
     height: 420,
     margin: 10,
     resizeMode: 'stretch'
   },
-  kuvascroll: {
-    marginBottom: 80,
-    padding: 20,
+ 
+  title: {
+    fontWeight: 'bold',
+    marginVertical: 4,
   },
-  infootsikko: {
-    margin: 20
-  },
-
 
 });
 
