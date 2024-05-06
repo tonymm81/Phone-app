@@ -5,7 +5,7 @@ import * as Location from 'expo-location';
 import { Camera, CameraCapturedPicture, PermissionResponse } from 'expo-camera';
 
 
-export const JustAppContext: React.Context<any> = createContext(undefined); // huomaa exportti, muuten ei toimi
+export const JustAppContext: React.Context<any> = createContext(undefined); 
 
 const db: SQLite.SQLiteDatabase = SQLite.openDatabase("JustApp.db");
 
@@ -13,7 +13,7 @@ const weahter_api = ENV_VAR
 
 db.transaction( // tää on sqgl kysely sijainneista
   (tx: SQLite.SQLTransaction) => {
-    //tx.executeSql(`DROP TABLE Voittajat`); // tankataan voittajan tiedot tänne
+    //tx.executeSql(`DROP TABLE forecastOld`); // tankataan voittajan tiedot tänne
     tx.executeSql(`CREATE TABLE IF NOT EXISTS forecastOld (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     City TEXT,
@@ -48,14 +48,18 @@ db.transaction( // tää on sqgl kysely sijainneista
 
 db.transaction( // tää on sqgl kysely sijainneista
   (tx: SQLite.SQLTransaction) => {
-    //tx.executeSql(`DROP TABLE MokkiTikka`); // tankataan tikkakilpailun detailit tänne
+    //tx.executeSql(`DROP TABLE GpsTracker`); // tankataan tikkakilpailun detailit tänne
     tx.executeSql(`CREATE TABLE IF NOT EXISTS GpsTracker (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     sessionName TEXT,
                     time_gps_start datetime,
                     time_gps_end datetime,
                     avarageSpeed Float,
-                    UserNotes TEXT
+                    location_start_lat  FLOAT,
+                    location_start_lon FLOAAT,
+                    location_end_lat FLOAT,
+                    location_end_lon FLOAT,
+                    travelDistance FLOAt
 
                   )`);
   },
@@ -91,7 +95,11 @@ export interface GpsTracker {
   time_gps_start: Date,
   time_gps_end: Date,
   avarageSpeed: number,
-  UserNotes: string,
+  location_start_lat  : number,
+  location_start_lon :number,
+  location_end_lat :number,
+  location_end_lon :number,
+  travelDistance : number
   
 }
 
@@ -137,6 +145,28 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
   const [showDialogPhoto, setShowDialogPhoto] = useState<boolean>(false)
   const [showDialogdelete, setShowDialogdelete] = useState<boolean>(false)
   const [savedPicture, setSavedPicture] = useState<CameraCapturedPicture>()
+  
+
+  const [gpsdetailsFromDb, setGpsdetailsFromDb] = useState<GpsTracker[]>([])
+  useEffect(() => {
+    getPhotosDb()
+        if (photosFromDb.length === 0){
+         getPhotosDb()   
+        }
+    getPhoneLocation()
+    if (location === undefined){
+      getPhoneLocation()
+
+    }
+    searchForecastDB()
+    if (forecalsDB === undefined){
+      searchForecastDB()
+    }
+
+
+}, []);
+
+  
 // forecast functions
   const get_location_user = async (userFeed : string) =>{ // here we get location Coordinates
     setCityForecast(userFeed)
@@ -180,7 +210,7 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
       let locationTemp = await Location.getCurrentPositionAsync({});
       //console.log("this location",locationTemp)
       setLocation(locationTemp);
-      setTimeout(()=> setLocation(locationTemp), 500)
+      setTimeout(()=> {setLocation(locationTemp)}, 500)
 
       return true
     }
@@ -223,7 +253,8 @@ const searchForecastDB = (): void =>{
         tx.executeSql(`SELECT * FROM forecastOld`, [], 
           (_tx : SQLite.SQLTransaction, rs : SQLite.SQLResultSet) => {// tää on etr mitä me tehdään niille tuloksille jokka kannasta tulee.
             setForecastDB(rs.rows._array); // pusketaan interfaceen.
-            setTimeout(()=> setForecastDB(rs.rows._array), 500)
+            setTimeout(()=> {setForecastDB(rs.rows._array)}, 500)
+            setForecastDB(rs.rows._array);
           });
       }, 
       (err: SQLite.SQLError) => console.log(err));
@@ -276,8 +307,10 @@ const getPhotosDb = () :void =>{
         tx.executeSql(`SELECT * FROM Photos `, [],
           (_tx: SQLite.SQLTransaction, rs: SQLite.SQLResultSet) => {
             setPhotosFromDb(rs.rows._array); 
-            setTimeout(() => setPhotosFromDb(rs.rows._array), 800)
+            setTimeout(() => {setPhotosFromDb(rs.rows._array)}, 800)
+            setPhotosFromDb(rs.rows._array);
             console.log("is there any images", photosFromDb)
+            
           });
       },
       (err: SQLite.SQLError) => console.log(err));
@@ -296,10 +329,12 @@ const deletePhoto = (index : number) :void =>{
   setShowDialogdelete(false)
   getPhotosDb()
 }
+
+
  
   return (
     <JustAppContext.Provider value={{
-                                    get_location_user,
+                                    get_location_user, // forecast values and functionss
                                     getForecatasUser,
                                     forecalsDB,
                                     searchForecastDB,
@@ -308,7 +343,7 @@ const deletePhoto = (index : number) :void =>{
                                     setAllowForecast,
                                     showDialog,
                                     setShowDialog,
-                                    startTheCamera,
+                                    startTheCamera,// camera values and functionss
                                     takePhoto,
                                     allowTakePhoto,
                                     cameraRef,
@@ -322,7 +357,11 @@ const deletePhoto = (index : number) :void =>{
                                     photosFromDb,
                                     deletePhoto,
                                     showDialogdelete,
-                                    setShowDialogdelete
+                                    setShowDialogdelete,
+                                    location,
+                                    gpsdetailsFromDb,// gps values
+                                   
+                                    
                                     }}>
             {props.children}
     </JustAppContext.Provider>

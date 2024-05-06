@@ -2,7 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Modal, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MenuView } from '@react-native-menu/menu';
 import { Button, Menu, Divider, PaperProvider, Provider, Appbar } from 'react-native-paper';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Forecast from './components/Forecast';
 import Photo from './components/Photo';
 import Tracker from './components/Tracker';
@@ -18,8 +18,10 @@ export default function App() {
   const [chooseStartView, setChooseStartView] = useState<boolean>(true)
   const [chooseForecastView, setChooseForecastView] = useState<boolean>(true)
   const [choosePhotosView, setChoosePhotosView] = useState<boolean>(true)
+ 
 
   const whereShallWeNavigate = (thePath: string): void => {// here is aaplication navigate
+
     if (thePath === "forecast") {
       setChooseForecastView(false)
       setChooseStartView(true)
