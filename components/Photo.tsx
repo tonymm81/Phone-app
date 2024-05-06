@@ -3,6 +3,7 @@ import {  Appbar, Button, Dialog, FAB, List, Portal, Provider, TextInput } from 
 import { useContext,  useEffect,  useMemo, useRef, useState } from 'react';
 import { JustAppContext, Photos } from '../context/JustAppContext';
 import { Camera } from 'expo-camera';
+import React from 'react';
 
 
 
@@ -51,8 +52,14 @@ const Photo : React.FC = () : React.ReactElement => {
         if (photosFromDb.length > 0){
           setShowListGraphics(true)
         }else{
+          if (photosFromDb.length === 0){
+           getPhotosDb()   
+          }
+          if (photosFromDb.length > 0){
+            setShowListGraphics(true)
+          }else{
           setShowListGraphics(false)
-
+          }
         }
       }
 

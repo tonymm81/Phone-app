@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View, Image, ScrollView } from 'react-native';
 import {  Button, TextInput } from 'react-native-paper';
 import { useContext,  useMemo, useRef, useState } from 'react';
+import React from 'react';
 
 
 

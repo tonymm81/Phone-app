@@ -58,3 +58,13 @@
 
 ## version 107
 - I make the startpage. Just adding some images and show what kind of applications this program keeps inside.
+
+## version 108
+
+- start to make gps app. Lets work on issue 10.
+- i made the gps component but still missing features a lot.
+- app is now taking the speed from gps and lan and lot values and calculate the distance from start. It also calculate the average speed.
+
+- I have to make a function what controls if the device is too long at the same location it stops the tracking.
+- I have to also make database save function, what saves data if the user wants so.
+- I try to avoid setState delay and i make the useeffect to context, what try to load database values ready when program is started.
