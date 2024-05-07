@@ -3,6 +3,7 @@ import { Button, Dialog, Portal, TextInput } from 'react-native-paper';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { forecastOld, JustAppContext } from '../context/JustAppContext';
 import { ListItem, Avatar } from 'react-native-elements'
+import React from 'react';
 
 
 const Forecast: React.FC = (): React.ReactElement => {

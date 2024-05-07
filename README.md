@@ -68,3 +68,7 @@
 - I have to make a function what controls if the device is too long at the same location it stops the tracking.
 - I have to also make database save function, what saves data if the user wants so.
 - I try to avoid setState delay and i make the useeffect to context, what try to load database values ready when program is started.
+
+## version 109
+- starting to work with issue 25. Lets do the gps tracker app propeties.
+- Gps tracker is ready now, so in the nature we have to test, if it calculate correctly

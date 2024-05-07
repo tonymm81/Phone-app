@@ -162,7 +162,10 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
     if (forecalsDB === undefined){
       searchForecastDB()
     }
-
+    getExcersicesFromDb()
+    if (gpsdetailsFromDb === undefined){
+      getExcersicesFromDb()
+    }
 
 }, []);
 
@@ -316,6 +319,52 @@ const getPhotosDb = () :void =>{
       (err: SQLite.SQLError) => console.log(err));
     
 }
+
+const saveExcersiceToDb = (excersiceName : string, startTime : number, stopTime: number,locationStart : Location.LocationObject, locationEnd :  Location.LocationObject, speed: number, locationResult : number) : void =>{
+  getPhoneLocation()
+  if (locationStart?.coords.latitude  && locationStart.coords.longitude){
+  db.transaction( // tankataan kantaan otettu kuva
+      (tx: SQLite.SQLTransaction) => {
+        tx.executeSql(`INSERT INTO GpsTracker (sessionName, time_gps_start, time_gps_end, avarageSpeed, location_start_lat, location_start_lon, location_end_lat,location_end_lon, travelDistance ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,    
+          [excersiceName, startTime, stopTime,speed, locationStart.coords.latitude, locationStart.coords.longitude , locationEnd.coords.latitude, locationEnd.coords.longitude, locationResult],
+          (_tx: SQLite.SQLTransaction, rs: SQLite.SQLResultSet) => {
+          });
+      },
+      (err: SQLite.SQLError) => setInfo(String(err)));
+      console.log("tallennettiinko suoritus")
+      getExcersicesFromDb()
+    }
+}
+
+const getExcersicesFromDb = (): void =>{
+  db.transaction( // huomaa tyypitykset
+      (tx: SQLite.SQLTransaction) => {
+        tx.executeSql(`SELECT * FROM GpsTracker `, [],
+          (_tx: SQLite.SQLTransaction, rs: SQLite.SQLResultSet) => {
+            setGpsdetailsFromDb(rs.rows._array); 
+            setGpsdetailsFromDb(rs.rows._array);
+            
+            
+          });
+      },
+      (err: SQLite.SQLError) => console.log(err));
+
+}
+
+const deleteExcercise = (index : number) :void =>{
+  db.transaction(// SijaintiAppi taulun id on sama kuin kuvvatJemma taulun merkintä_id
+  (tx : SQLite.SQLTransaction) => {
+    tx.executeSql(`DELETE FROM GpsTracker WHERE id = ${index}`, [], 
+      (_tx : SQLite.SQLTransaction, rs : SQLite.SQLResultSet) => {
+        
+      });
+  }, 
+  
+  (err: SQLite.SQLError) => console.log(err));
+  
+  getExcersicesFromDb()
+}
+
 const deletePhoto = (index : number) :void =>{
   db.transaction(// SijaintiAppi taulun id on sama kuin kuvvatJemma taulun merkintä_id
   (tx : SQLite.SQLTransaction) => {
@@ -360,7 +409,8 @@ const deletePhoto = (index : number) :void =>{
                                     setShowDialogdelete,
                                     location,
                                     gpsdetailsFromDb,// gps values
-                                   
+                                    saveExcersiceToDb,
+                                    deleteExcercise
                                     
                                     }}>
             {props.children}
