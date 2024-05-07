@@ -72,3 +72,6 @@
 ## version 109
 - starting to work with issue 25. Lets do the gps tracker app propeties.
 - Gps tracker is ready now, so in the nature we have to test, if it calculate correctly
+
+
+ npx eas-cli build --profile preview
