@@ -1,17 +1,22 @@
 import { StyleSheet, Text, View, Image, ScrollView } from 'react-native';
 import {  Button, Dialog, Portal, TextInput } from 'react-native-paper';
 import { useContext,  useEffect,  useMemo, useRef, useState } from 'react';
-import { JustAppContext } from '../context/JustAppContext';
+import { GpsTracker, JustAppContext } from '../context/JustAppContext';
 import React from 'react';
-
+import * as Location from 'expo-location';
+import { ListItem } from 'react-native-elements';
 
 
 let laskurioboolean = false//i explain this later
+let saveOrNot = false
 
 const Tracker : React.FC = () : React.ReactElement => {
     const { 
         getPhoneLocation,
-        location
+        location,
+        saveExcersiceToDb,
+        gpsdetailsFromDb,
+        deleteExcercise
             
         
                         } = useContext(JustAppContext);
@@ -21,7 +26,7 @@ const Tracker : React.FC = () : React.ReactElement => {
     const [saveExcercise, setSaveExcercise] = useState<boolean>(false)
     const [calculate, setCalculate] = useState<boolean>(false)
     const [ongoingExcercise, setOngoingExcercise] = useState<boolean>(false)
-    const [saveOrNot, setSaveOrNot] = useState<boolean>(false)
+    //const [saveOrNot, setSaveOrNot] = useState<boolean>(false)
     useEffect(() => {
       getPhoneLocation()
       if ( location === undefined){
@@ -66,18 +71,23 @@ const Tracker : React.FC = () : React.ReactElement => {
             let stopTime = new Date().getTime()
             let recordingTime = new Date().getTime()
             let locationStart = location
-            let locationEnd = {}
+            let locationEnd : Location.LocationObject
+            let loacionMeasureTemp : Location.LocationObject = location
             let speed = 0
             let lowestSpeed = 3
             let lowSpeed = Number.POSITIVE_INFINITY;
             let highestSpeed = Number.NEGATIVE_INFINITY;
             let totalSpeed = 0
             let numberOfMeasurements = 0
-           
+            let DistanceTemp = 0
+            let compareDistanceTemp = 0
+            let compareTimeTemp = new Date().getTime()
             let locationResult = 0
             let locationTemp = 0
             console.log("we are running ", excersiceName, location)
             for (let i = 0; 1 < 100;){
+              recordingTime = new Date().getTime()
+              getPhoneLocation()
               if (location?.coords.speed !== undefined){
                 speed = location.coords.speed
                 console.log("onko undefined")
@@ -90,9 +100,26 @@ const Tracker : React.FC = () : React.ReactElement => {
              
               locationTemp =  haversine(Number(location?.coords.latitude), 
                                         Number(location?.coords.longitude), 
-                                        Number(locationStart?.coords.latitude), 
-                                        Number(locationStart?.coords.longitude));
+                                        Number(loacionMeasureTemp?.coords.latitude), 
+                                        Number(loacionMeasureTemp?.coords.longitude));
               locationResult = locationResult + locationTemp
+              loacionMeasureTemp = location
+
+              if (locationResult > DistanceTemp ){ // lets find out if the user is in the same place too long time
+                DistanceTemp = locationResult
+                compareTimeTemp = new Date().getTime() // if not, lets update the time stamp
+              }
+              if (locationTemp === DistanceTemp){ // if distance is not growing lets calculate time and break the loop
+                if (recordingTime-compareTimeTemp >= 600000){
+                  console.log("interrupt")
+                  setOngoingExcercise(false)
+                  laskurioboolean = false
+                  setSaveExcercise(false)
+                  saveOrNot = false
+                  break
+                }
+
+              }
 
               console.log("ollaanko loopis", speed, calculate, ongoingExcercise, locationResult, totalSpeed, location.coords.speed)
               numberOfMeasurements = numberOfMeasurements + 1
@@ -101,19 +128,21 @@ const Tracker : React.FC = () : React.ReactElement => {
                 break
               }
               await delay(5000);
-              speed = speed + 1
+              //speed = speed + 1
             }
+            stopTime = new Date().getTime()
             locationEnd = location // save the ending location
             const averageSpeed = totalSpeed / numberOfMeasurements;
-            stopAndSaveExercise(excersiceName, startTime, stopTime,locationStart, locationEnd, averageSpeed, locationResult)
+            stopAndSaveExercise(excersiceName, startTime, stopTime,locationStart, locationEnd, averageSpeed, locationResult / 1000)
         }else{
           console.log("no permission")
         }
       }
       
-      const stopAndSaveExercise = (excersiceName : string, startTime : number, stopTime: number,locationStart : {}, locationEnd :  {}, speed: number, locationResult : number) : void =>{
+      const stopAndSaveExercise = (excersiceName : string, startTime : number, stopTime: number,locationStart : Location.LocationObject, locationEnd :  Location.LocationObject, speed: number, locationResult : number) : void =>{
         if (saveOrNot){
           console.log("save")
+          saveExcersiceToDb(excersiceName, startTime,stopTime,locationStart, locationEnd, speed, locationResult )
           // tallenna kantaan
         }
         
@@ -125,83 +154,108 @@ const Tracker : React.FC = () : React.ReactElement => {
     const StopExcercise = () :void =>{
         setOngoingExcercise(false)
         setSaveExcercise(false)
-        setSaveOrNot(false)
+        //setSaveOrNot(false)
+        saveOrNot = false
+        laskurioboolean = false
 
     }
     const StopAndSaveExcerciseUser = () :void =>{
-        setSaveOrNot(true)
+        // setSaveOrNot(true)
+        saveOrNot = true
         setOngoingExcercise(false)
         setSaveExcercise(false)
+        updateCalculateBoolean(false)
+        laskurioboolean = false
     }
     const StartTrackingExcercise =  () :void =>{
         setOngoingExcercise(true)
         updateCalculateBoolean(true)
         laskurioboolean = true
-        //setTimeout(() => {setOngoingExcercise(true), console.log("1")}, 800)
-        //setTimeout(() => {setOngoingExcercise(true), console.log("2")}, 1800)
         setTimeout( async () => {await startExcerciseSaving(String(userInput.current), true)}, 3000)
         
     }
     const stopCalculating = ():void =>{
-      updateCalculateBoolean(false)
+      
       setSaveExcercise(true)
-      laskurioboolean = false
+      
     }
-
-    //console.log("boolean", ongoingExcercise, location.coords.speed)
+   //console.log(gpsdetailsFromDb)
      return ( 
     <><><Text style={styles.headline}>Gps tracker</Text>
     <Button style={{ marginTop: 20 }}
-            mode="contained"
-            icon="plus"
-            onPress={() => setStartTracking(true) }
+         mode="contained"
+         icon="plus"
+         onPress={() => setStartTracking(true)}
 
-        >Start excersice
-        </Button></>
-            <Portal>
-                <Dialog
-                    visible={startTracking}
-                    onDismiss={() => setStartTracking(false)}
-                >
-                    <Dialog.Title>Give name for your activite</Dialog.Title>
-                    <Dialog.Content>
-                        <TextInput
-                            label="search"
-                            mode="outlined"
-                            placeholder='Write here the name'
-                            onChangeText={(tex_text: string) => saveUserInput(tex_text)} />
-                    </Dialog.Content>
-                    <Dialog.Actions>
-                        <Button  onPress={() => StartTrackingExcercise() }>Start Tracking</Button>
-                        <Button onPress={() => setStartTracking(false) }>go back</Button>
-                    </Dialog.Actions>
-                </Dialog>
-            </Portal>
-            <Portal>
-                <Dialog
-                    visible={saveExcercise}
-                    onDismiss={() => setSaveExcercise(false)}
-                >
-                    <Dialog.Title>Do you want to save this activitate?</Dialog.Title>
-                    <Dialog.Actions>
-                        <Button onPress={() => StopAndSaveExcerciseUser()} >Save</Button>
-                        <Button onPress={() => StopExcercise() }>dismiss</Button>
-                    </Dialog.Actions>
-                </Dialog>
-            </Portal>
-            {ongoingExcercise ? 
-                    <><Text>Ongoing excercise</Text>
-                    <Button onPress={() => stopCalculating() }
-                    style={{ marginTop: 20 }}
-                    mode="contained"
-                    icon="plus">Stop excersice</Button></>
-            : 
-                    <Text>ei ja tähän listaa suorituksista</Text>
-                    
-                    
-            }
-            
-            </>
+       >Start excersice
+       </Button><Portal>
+           <Dialog
+             visible={startTracking}
+             onDismiss={() => setStartTracking(false)}
+           >
+             <Dialog.Title>Give name for your activite</Dialog.Title>
+             <Dialog.Content>
+               <TextInput
+                 label="search"
+                 mode="outlined"
+                 placeholder='Write here the name'
+                 onChangeText={(tex_text: string) => saveUserInput(tex_text)} />
+             </Dialog.Content>
+             <Dialog.Actions>
+               <Button onPress={() => StartTrackingExcercise()}>Start Tracking</Button>
+               <Button onPress={() => setStartTracking(false)}>go back</Button>
+             </Dialog.Actions>
+           </Dialog>
+         </Portal><Portal>
+           <Dialog
+             visible={saveExcercise}
+             onDismiss={() => setSaveExcercise(false)}
+           >
+             <Dialog.Title>Do you want to save this activitate?</Dialog.Title>
+             <Dialog.Actions>
+               <Button onPress={() => StopAndSaveExcerciseUser()}>Save</Button>
+               <Button onPress={() => StopExcercise()}>dismiss</Button>
+             </Dialog.Actions>
+           </Dialog>
+         </Portal>
+
+         {ongoingExcercise ?
+           <><Text>Ongoing excercise</Text><Button onPress={() => stopCalculating()}
+             style={{ marginTop: 20 }}
+             mode="contained"
+             icon="plus">Stop excersice</Button></>
+           :
+           <Text style={styles.title}>Saved excercises</Text>}</><>
+           {Boolean(gpsdetailsFromDb) ?
+
+             
+               gpsdetailsFromDb.map((excercise: GpsTracker, idx: number) => {
+                 return (
+                   <View key={idx} style={styles.listView}>
+                     <ListItem key={excercise.sessionName} bottomDivider>
+
+                       <ListItem.Content style={styles.listView}>
+                         <ListItem.Title>excercise name: {excercise.sessionName} Distance : {excercise.travelDistance.toFixed(2)} meters</ListItem.Title>
+                         <ListItem.Subtitle>avarage speed : {excercise.avarageSpeed}</ListItem.Subtitle>
+                         <ListItem.Subtitle>locatin start latitude: {excercise.location_start_lat} and longitude: {excercise.location_start_lon}</ListItem.Subtitle>
+                         <ListItem.Subtitle>locatin start latitude: {excercise.location_end_lat} and longitude: {excercise.location_end_lon}</ListItem.Subtitle>
+                         <ListItem.Subtitle>Time start {new Date(excercise.time_gps_start).toLocaleString()} and end time: {new Date(excercise.time_gps_end).toLocaleString()}</ListItem.Subtitle>
+                       </ListItem.Content>
+                       
+                     </ListItem>
+                     <Button style={{ marginTop: 20 }}
+                                mode="contained"
+                                icon="minus"
+                                onPress={() => deleteExcercise(excercise.id)}
+
+                              >Delete excersice
+                              </Button>
+                   </View>
+                 );
+               })
+              : <Text style={styles.title}>No saved excersices</Text>}</></>
+                   
+              
 
 )
 }
@@ -217,17 +271,16 @@ const styles = StyleSheet.create({
        alignItems: 'center',
     },
    
-    image: {
-      width: 320,
-      height: 420,
-      margin: 10,
-      resizeMode: 'stretch'
+    listView: {
+      backgroundColor : "lightgray",
+      margin : 5
     },
    
     title: {
       fontWeight: 'bold',
       marginVertical: 4,
-      margin:15
+      margin:15,
+      fontSize : 20
     },
     headline : {
       fontWeight: 'bold',
