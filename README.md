@@ -74,4 +74,12 @@
 - Gps tracker is ready now, so in the nature we have to test, if it calculate correctly
 
 
+## version 110
+- First build version didnt work so vell. Forecast wasnt working at all and it because the apikey didnt go to builded version
+- second fault was that gps tracker didnt count anything so lets fix this first.
+
+- report: some how trhe usecontext location didn,t update. So i move the function to Tracker app and it starts to work. - I also add secret key to expos website so the forecast should work now.
+
+Gps is working now and it is calculating the distance between start and end of excercise. Forecast apikey doesnt work but i think that inb local machine this is fine.
+
  npx eas-cli build --profile preview

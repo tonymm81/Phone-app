@@ -9,6 +9,9 @@ import { ListItem } from 'react-native-elements';
 
 let laskurioboolean = false//i explain this later
 let saveOrNot = false
+let tempSpeed = 0
+let tempDistance = 0
+let locationHaversinreturn = 0
 
 const Tracker : React.FC = () : React.ReactElement => {
     const { 
@@ -27,6 +30,16 @@ const Tracker : React.FC = () : React.ReactElement => {
     const [calculate, setCalculate] = useState<boolean>(false)
     const [ongoingExcercise, setOngoingExcercise] = useState<boolean>(false)
     //const [saveOrNot, setSaveOrNot] = useState<boolean>(false)
+    const getPhoneLocationtoCalculaate = async() =>{
+      let locationTemp : Location.LocationObject 
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      
+       locationTemp  = await Location.getCurrentPositionAsync({});
+        //console.log("this location",locationTemp)
+       
+        return locationTemp
+      
+    }
     useEffect(() => {
       getPhoneLocation()
       if ( location === undefined){
@@ -62,19 +75,20 @@ const Tracker : React.FC = () : React.ReactElement => {
     
   
     const startExcerciseSaving = async (excersiceName: string, test : boolean) : Promise<void> =>{
-        let permissionOk = await getPhoneLocation()
+        let permissionOk = await getPhoneLocationtoCalculaate()
         if (permissionOk){
             setStartTracking(false)
-            getPhoneLocation()
+            //await getPhoneLocation()
             //setOngoingExcercise(test)
             let startTime = new Date().getTime()
             let stopTime = new Date().getTime()
             let recordingTime = new Date().getTime()
-            let locationStart = location
+            let locationStart = await getPhoneLocationtoCalculaate()
             let locationEnd : Location.LocationObject
-            let loacionMeasureTemp : Location.LocationObject = location
-            let speed = 0
-            let lowestSpeed = 3
+            let locationPoint : Location.LocationObject
+            let loacionMeasureTemp : Location.LocationObject = await getPhoneLocationtoCalculaate()
+            let speed = 0 
+            let lowestSpeed = 1
             let lowSpeed = Number.POSITIVE_INFINITY;
             let highestSpeed = Number.NEGATIVE_INFINITY;
             let totalSpeed = 0
@@ -87,9 +101,9 @@ const Tracker : React.FC = () : React.ReactElement => {
             console.log("we are running ", excersiceName, location)
             for (let i = 0; 1 < 100;){
               recordingTime = new Date().getTime()
-              getPhoneLocation()
-              if (location?.coords.speed !== undefined){
-                speed = location.coords.speed
+              locationPoint = await getPhoneLocationtoCalculaate()
+              if (locationPoint?.coords.speed !== undefined){
+                speed = Number(locationPoint.coords.speed)
                 console.log("onko undefined")
                 highestSpeed = Math.max(highestSpeed, speed);
                 if (speed >= lowestSpeed) {
@@ -97,13 +111,16 @@ const Tracker : React.FC = () : React.ReactElement => {
                     totalSpeed += speed;
                 }
               }
-             
-              locationTemp =  haversine(Number(location?.coords.latitude), 
-                                        Number(location?.coords.longitude), 
+              console.log("location", locationPoint)
+              locationTemp =  haversine(Number(locationPoint?.coords.latitude), 
+                                        Number(locationPoint?.coords.longitude), 
                                         Number(loacionMeasureTemp?.coords.latitude), 
                                         Number(loacionMeasureTemp?.coords.longitude));
-              locationResult = locationResult + locationTemp
-              loacionMeasureTemp = location
+              locationResult = locationResult + locationTemp//distance
+              locationHaversinreturn = locationTemp // distance
+              loacionMeasureTemp = locationPoint // location
+              tempDistance = locationResult
+              tempSpeed = totalSpeed
 
               if (locationResult > DistanceTemp ){ // lets find out if the user is in the same place too long time
                 DistanceTemp = locationResult
@@ -131,9 +148,9 @@ const Tracker : React.FC = () : React.ReactElement => {
               //speed = speed + 1
             }
             stopTime = new Date().getTime()
-            locationEnd = location // save the ending location
+            locationEnd = await getPhoneLocationtoCalculaate() // save the ending location
             const averageSpeed = totalSpeed / numberOfMeasurements;
-            stopAndSaveExercise(excersiceName, startTime, stopTime,locationStart, locationEnd, averageSpeed, locationResult / 1000)
+            stopAndSaveExercise(excersiceName, startTime, stopTime,locationStart, locationEnd, averageSpeed, locationResult)
         }else{
           console.log("no permission")
         }
@@ -220,7 +237,7 @@ const Tracker : React.FC = () : React.ReactElement => {
          </Portal>
 
          {ongoingExcercise ?
-           <><Text>Ongoing excercise</Text><Button onPress={() => stopCalculating()}
+           <><Text>Ongoing excercise {tempDistance} speed : {tempSpeed} : location : {locationHaversinreturn}</Text><Button onPress={() => stopCalculating()}
              style={{ marginTop: 20 }}
              mode="contained"
              icon="plus">Stop excersice</Button></>
@@ -235,11 +252,26 @@ const Tracker : React.FC = () : React.ReactElement => {
                      <ListItem key={excercise.sessionName} bottomDivider>
 
                        <ListItem.Content style={styles.listView}>
-                         <ListItem.Title>excercise name: {excercise.sessionName} Distance : {excercise.travelDistance.toFixed(2)} meters</ListItem.Title>
-                         <ListItem.Subtitle>avarage speed : {excercise.avarageSpeed}</ListItem.Subtitle>
-                         <ListItem.Subtitle>locatin start latitude: {excercise.location_start_lat} and longitude: {excercise.location_start_lon}</ListItem.Subtitle>
-                         <ListItem.Subtitle>locatin start latitude: {excercise.location_end_lat} and longitude: {excercise.location_end_lon}</ListItem.Subtitle>
-                         <ListItem.Subtitle>Time start {new Date(excercise.time_gps_start).toLocaleString()} and end time: {new Date(excercise.time_gps_end).toLocaleString()}</ListItem.Subtitle>
+                         <ListItem.Title>excercise name: {excercise.sessionName} 
+                                          Distance : {excercise.travelDistance.toFixed(2)} meters
+                          </ListItem.Title>
+
+                         <ListItem.Subtitle>avarage speed : {excercise.avarageSpeed.toFixed(2)}
+                          </ListItem.Subtitle>
+
+                         <ListItem.Subtitle>locatin start latitude: {excercise.location_start_lat}
+                                             and longitude: {excercise.location_start_lon}
+                            </ListItem.Subtitle>
+
+                         <ListItem.Subtitle>locatin start latitude: {excercise.location_end_lat} 
+                                            and longitude: {excercise.location_end_lon}
+                            </ListItem.Subtitle>
+
+                         <ListItem.Subtitle>Time start {new Date(excercise.time_gps_start).toLocaleString()}
+                                             and end time: {new Date(excercise.time_gps_end).toLocaleString()} 
+                                             excercise last: {Math.floor(new Date(excercise.time_gps_end).getTime() 
+                                                              - new Date(excercise.time_gps_start).getTime()) / 60000}
+                              </ListItem.Subtitle>
                        </ListItem.Content>
                        
                      </ListItem>

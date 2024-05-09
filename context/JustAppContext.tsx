@@ -236,6 +236,9 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
       for (let i = 0; i < Object.keys(wholeForecast).length; i++){
       db.transaction(
         (tx : SQLite.SQLTransaction) => {
+          if (wholeForecast.city.name === undefined ){
+            wholeForecast.city.name = ""
+          }
           
           tx.executeSql(`INSERT INTO forecastOld (City, timestamp, max_temp, min_temp, description, icon) VALUES (?,?,?,?,?,?)`, 
             [wholeForecast.city.name ,wholeForecast['list'][i]['dt'], wholeForecast['list'][i]['main']['temp_max'], wholeForecast['list'][i]['main']['temp_min'] , wholeForecast['list'][i]['weather'][0]['main'] , wholeForecast['list'][i]['weather'][0]['icon'] ],
