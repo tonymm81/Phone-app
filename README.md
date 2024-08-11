@@ -83,3 +83,7 @@
 Gps is working now and it is calculating the distance between start and end of excercise. Forecast apikey doesnt work but i think that inb local machine this is fine.
 
  npx eas-cli build --profile preview
+ ## version 111
+ - I just started to update my react-native app and it wont be easy because there was update in sdk version. 
+ - That caused a database error, because the database syntax was changed in expo sq-lite. And also Camera module have changed.
+ - I found the workin version of how to insert into daabase some values, but it gives error from missin unique ke and i have in database id autoincrement value for id.

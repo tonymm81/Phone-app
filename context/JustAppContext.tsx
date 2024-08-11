@@ -27,7 +27,7 @@ db.execAsync( // tää on sqgl kysely sijainneista
 db.execAsync( // tää on sqgl kysely sijainneista
     //tx.executeSql(`DROP TABLE Photos`); // tankataan dartsimatsin tulokset tänne
     
-    `PRAGMA journal_mode = WAL;
+    `
     CREATE TABLE IF NOT EXISTS Photos (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT,
@@ -264,8 +264,19 @@ const savePhotoToDb = async (imagetext : string, headliner : string) : Promise<v
   getPhoneLocation()
   if (location?.coords.latitude  && location.coords.longitude && location.timestamp && savedPicture){
     console.log("db statement", headliner, imagetext, location.coords.longitude, location.coords.latitude, savedPicture.uri, location.timestamp)
-
+    const statement = await db.prepareAsync(
+      'INSERT INTO Photos (name, imageText, location_lon, location_lat, Device_path, time_photo) VALUES ($name, $imageText, $location_lon, $location_lat, $Device_path, $time_photo)'
+    );
     try {
+      let result = await statement.executeAsync({ $name: `${headliner}`, $imageText: `${location.coords.longitude}`, $location_lat:` ${location.coords.latitude}`,$Device_path:`${savedPicture.uri }`,$time_photo : ` ${ location.timestamp}`});
+      console.log('bbb and 101:', result.lastInsertRowId, result.changes, result);
+    
+     
+    } finally {
+      await statement.finalizeAsync();
+    }
+    
+   /* try {
       const statement = await db.prepareAsync( // tankataan kantaan otettu kuva
         `INSERT INTO Photos (name, imageText, location_lon, location_lat, Device_path, 
         time_photo) VALUES (${headliner}, 
@@ -280,8 +291,8 @@ const savePhotoToDb = async (imagetext : string, headliner : string) : Promise<v
 
     }
     catch(error){
-      console.log("error phot ", error)
-    }
+      console.log("error photos ", error)
+    }*/
     }else{
       console.log("If clause failed on photos")
     }
