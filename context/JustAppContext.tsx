@@ -2,19 +2,19 @@ import React, { createContext, useEffect, useMemo, useRef, useState } from 'reac
 import * as SQLite from 'expo-sqlite';
 import { ENV_VAR } from "@env" 
 import * as Location from 'expo-location';
-import { Camera, CameraCapturedPicture, PermissionResponse } from 'expo-camera';
+import { Camera, CameraCapturedPicture, CameraView, PermissionResponse } from 'expo-camera';
 
 
 export const JustAppContext: React.Context<any> = createContext(undefined); 
 
-const db: SQLite.SQLiteDatabase = SQLite.openDatabase("JustApp.db");
+const db: SQLite.SQLiteDatabase = SQLite.openDatabaseSync("JustApp.db");
 
 const weahter_api = ENV_VAR
 
-db.transaction( // tää on sqgl kysely sijainneista
-  (tx: SQLite.SQLTransaction) => {
+db.execAsync( // tää on sqgl kysely sijainneista
+ 
     //tx.executeSql(`DROP TABLE forecastOld`); // tankataan voittajan tiedot tänne
-    tx.executeSql(`CREATE TABLE IF NOT EXISTS forecastOld (
+    `CREATE TABLE IF NOT EXISTS forecastOld (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     City TEXT,
                     timestamp datetime,
@@ -22,16 +22,13 @@ db.transaction( // tää on sqgl kysely sijainneista
                     min_temp FLOAT,
                     description TEXT,
                     icon TEXT
-                  )`);
-  },
-  (err: SQLite.SQLError) => {
-    console.log(err)
-  }
-);
-db.transaction( // tää on sqgl kysely sijainneista
-  (tx: SQLite.SQLTransaction) => {
+                  );`);
+  
+db.execAsync( // tää on sqgl kysely sijainneista
     //tx.executeSql(`DROP TABLE Photos`); // tankataan dartsimatsin tulokset tänne
-    tx.executeSql(`CREATE TABLE IF NOT EXISTS Photos (
+    
+    `PRAGMA journal_mode = WAL;
+    CREATE TABLE IF NOT EXISTS Photos (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT,
                     imageText TEXT,
@@ -40,16 +37,12 @@ db.transaction( // tää on sqgl kysely sijainneista
                     Device_path TEXT,
                     time_photo datetime
                   )`);
-  },
-  (err: SQLite.SQLError) => {
-    console.log(err)
-  }
-);
+ 
 
-db.transaction( // tää on sqgl kysely sijainneista
-  (tx: SQLite.SQLTransaction) => {
+db.execAsync( // tää on sqgl kysely sijainneista
+  
     //tx.executeSql(`DROP TABLE GpsTracker`); // tankataan tikkakilpailun detailit tänne
-    tx.executeSql(`CREATE TABLE IF NOT EXISTS GpsTracker (
+    `CREATE TABLE IF NOT EXISTS GpsTracker (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     sessionName TEXT,
                     time_gps_start datetime,
@@ -61,12 +54,8 @@ db.transaction( // tää on sqgl kysely sijainneista
                     location_end_lon FLOAT,
                     travelDistance FLOAt
 
-                  )`);
-  },
-  (err: SQLite.SQLError) => {
-    console.log(err)
-  }
-);
+                  );`);
+  
 
 
 export interface forecastOld { 
@@ -137,7 +126,7 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
   const [location, setLocation] = useState<Location.LocationObject>();
   const [errorMsg, setErrorMsg] = useState<string>("");
 
-  const cameraRef: any = useRef<Camera>();// cameras values
+  const cameraRef: any = useRef<CameraView>();// cameras values
   const [info, setInfo] = useState<string>()
   const [openCamera, setOpenCamera] = useState<boolean>(false)
   const [photosFromDb, setPhotosFromDb] = useState<Photos[]>([]) 
@@ -218,59 +207,38 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
       return true
     }
   }
-  const deleteForecast = () : void => {
-
-    db.transaction(
-      (tx : SQLite.SQLTransaction) => {
-        tx.executeSql(`DELETE FROM forecastOld`, [], 
-          (_tx : SQLite.SQLTransaction, rs : SQLite.SQLResultSet) => {
-            //haeOstokset();
-          });
-      }, 
-      (err: SQLite.SQLError) => console.log(err));
+  const deleteForecast = async () : Promise<void> => {
+    await db.runAsync('DELETE FROM forecastOld',[]); // Binding named parameters from object
 
   }
-  const save_forecast_db = (wholeForecast : any): void =>{
+  const save_forecast_db = async (wholeForecast : any): Promise<void> =>{
     if (Object.keys(wholeForecast).length > 0){
       deleteForecast()
       for (let i = 0; i < Object.keys(wholeForecast).length; i++){
-      db.transaction(
-        (tx : SQLite.SQLTransaction) => {
+      
           if (wholeForecast.city.name === undefined ){
             wholeForecast.city.name = ""
           }
           
-          tx.executeSql(`INSERT INTO forecastOld (City, timestamp, max_temp, min_temp, description, icon) VALUES (?,?,?,?,?,?)`, 
-            [wholeForecast.city.name ,wholeForecast['list'][i]['dt'], wholeForecast['list'][i]['main']['temp_max'], wholeForecast['list'][i]['main']['temp_min'] , wholeForecast['list'][i]['weather'][0]['main'] , wholeForecast['list'][i]['weather'][0]['icon'] ],
-            (_tx : SQLite.SQLTransaction, rs : SQLite.SQLResultSet) => {
-              //console.log("did we save")
-              searchForecastDB(); // tällä synkataan tietokanta lisäyksen jälkeen
-
-            });
-        }, 
-        (err: SQLite.SQLError) => console.log(err));
-
+          await db.execAsync(`INSERT INTO forecastOld (City, timestamp, max_temp, min_temp, description, icon) VALUES (${wholeForecast.city.name},${wholeForecast['list'][i]['dt']},${ wholeForecast['list'][i]['main']['temp_max']},${wholeForecast['list'][i]['main']['temp_min'] },${wholeForecast['list'][i]['weather'][0]['main']},${ wholeForecast['list'][i]['weather'][0]['icon']});`, 
+            )
+          searchForecastDB(); // tällä synkataan tietokanta lisäyksen jälkeen
     }
   }
 }
-const searchForecastDB = (): void =>{
-  db.transaction( // huomaa tyypitykset
-      (tx : SQLite.SQLTransaction) => {
-        tx.executeSql(`SELECT * FROM forecastOld`, [], 
-          (_tx : SQLite.SQLTransaction, rs : SQLite.SQLResultSet) => {// tää on etr mitä me tehdään niille tuloksille jokka kannasta tulee.
-            setForecastDB(rs.rows._array); // pusketaan interfaceen.
-            setTimeout(()=> {setForecastDB(rs.rows._array)}, 500)
-            setForecastDB(rs.rows._array);
-          });
-      }, 
-      (err: SQLite.SQLError) => console.log(err));
+const searchForecastDB = async (): Promise<void> =>{
+  const allRows: forecastOld[] = await db.getAllAsync('SELECT * FROM forecastOld');
+            setTimeout(()=> {setForecastDB(allRows)}, 500)
+            setForecastDB(allRows);
+          
+      
 }
 
 const startTheCamera = async (): Promise<void> => {// käynnistä kamera ja kysy lupa, jos lupa on avataan kuvaustila
   
   if (!allowTakePhoto) {
     const cameraPermission: PermissionResponse = await Camera.requestCameraPermissionsAsync();
-    //console.log(cameraPermission.granted, cameraPermission)
+    console.log(cameraPermission.granted, cameraPermission)
     setOpenCamera(cameraPermission.granted)
     setInfo((!cameraPermission.granted) ? "No permission to use a camera." : "")
     setAllowTakePhoto(true)
@@ -292,92 +260,66 @@ const takePhoto = async (): Promise<void> => { // räpsitään kuva
   //haeKuvat();
 }
 
-const savePhotoToDb = (imagetext : string, headliner : string) : void =>{
+const savePhotoToDb = async (imagetext : string, headliner : string) : Promise<void> =>{
   getPhoneLocation()
   if (location?.coords.latitude  && location.coords.longitude && location.timestamp && savedPicture){
-  db.transaction( // tankataan kantaan otettu kuva
-      (tx: SQLite.SQLTransaction) => {
-        tx.executeSql(`INSERT INTO Photos (name, imageText, location_lon, location_lat, Device_path, time_photo) VALUES (?, ?, ?, ?, ?, ?)`,    
-          [headliner, imagetext, location.coords.longitude, location.coords.latitude, savedPicture.uri , location.timestamp],
-          (_tx: SQLite.SQLTransaction, rs: SQLite.SQLResultSet) => {
-          });
-      },
-      (err: SQLite.SQLError) => setInfo(String(err)));
+    console.log("db statement", headliner, imagetext, location.coords.longitude, location.coords.latitude, savedPicture.uri, location.timestamp)
+
+    try {
+      const statement = await db.prepareAsync( // tankataan kantaan otettu kuva
+        `INSERT INTO Photos (name, imageText, location_lon, location_lat, Device_path, 
+        time_photo) VALUES (${headliner}, 
+        ${imagetext}, 
+        ${location.coords.longitude}, 
+        ${location.coords.latitude}, 
+        ${savedPicture.uri }, 
+        ${ location.timestamp})`)
+      console.log("statement db photos", statement)    
       setShowDialogPhoto(false)
       getPhotosDb()
+
     }
+    catch(error){
+      console.log("error phot ", error)
+    }
+    }else{
+      console.log("If clause failed on photos")
+    }
+  
 }
-const getPhotosDb = () :void =>{
-  db.transaction( // huomaa tyypitykset
-      (tx: SQLite.SQLTransaction) => {
-        tx.executeSql(`SELECT * FROM Photos `, [],
-          (_tx: SQLite.SQLTransaction, rs: SQLite.SQLResultSet) => {
-            setPhotosFromDb(rs.rows._array); 
-            setTimeout(() => {setPhotosFromDb(rs.rows._array)}, 800)
-            setPhotosFromDb(rs.rows._array);
-            console.log("is there any images", photosFromDb)
-            
-          });
-      },
-      (err: SQLite.SQLError) => console.log(err));
-    
+const getPhotosDb = async () :Promise<void> =>{
+  const photosRow: Photos[] = await db.getAllAsync('SELECT * FROM Photos');
+  setPhotosFromDb(photosRow); 
+  setTimeout(() => {setPhotosFromDb(photosRow)}, 800)
+  setPhotosFromDb(photosRow);
+  console.log("is there any images", photosFromDb)
 }
 
 const saveExcersiceToDb = (excersiceName : string, startTime : number, stopTime: number,locationStart : Location.LocationObject, locationEnd :  Location.LocationObject, speed: number, locationResult : number) : void =>{
   getPhoneLocation()
   if (locationStart?.coords.latitude  && locationStart.coords.longitude){
-  db.transaction( // tankataan kantaan otettu kuva
-      (tx: SQLite.SQLTransaction) => {
-        tx.executeSql(`INSERT INTO GpsTracker (sessionName, time_gps_start, time_gps_end, avarageSpeed, location_start_lat, location_start_lon, location_end_lat,location_end_lon, travelDistance ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,    
-          [excersiceName, startTime, stopTime,speed, locationStart.coords.latitude, locationStart.coords.longitude , locationEnd.coords.latitude, locationEnd.coords.longitude, locationResult],
-          (_tx: SQLite.SQLTransaction, rs: SQLite.SQLResultSet) => {
-          });
-      },
-      (err: SQLite.SQLError) => setInfo(String(err)));
+    
+  db.execAsync( // tankataan kantaan otettu kuva
+        `INSERT INTO GpsTracker (sessionName, time_gps_start, time_gps_end, avarageSpeed, location_start_lat, location_start_lon, location_end_lat,location_end_lon, travelDistance ) VALUES (${excersiceName}, ${startTime}, ${stopTime}, ${speed}, ${locationStart.coords.latitude}, ${locationStart.coords.longitude}, ${locationEnd.coords.latitude}, ${ locationEnd.coords.longitude}, ${locationResult});`)   
       console.log("tallennettiinko suoritus")
       getExcersicesFromDb()
     }
 }
 
-const getExcersicesFromDb = (): void =>{
-  db.transaction( // huomaa tyypitykset
-      (tx: SQLite.SQLTransaction) => {
-        tx.executeSql(`SELECT * FROM GpsTracker `, [],
-          (_tx: SQLite.SQLTransaction, rs: SQLite.SQLResultSet) => {
-            setGpsdetailsFromDb(rs.rows._array); 
-            setGpsdetailsFromDb(rs.rows._array);
-            
-            
-          });
-      },
-      (err: SQLite.SQLError) => console.log(err));
-
+const getExcersicesFromDb = async (): Promise<void> =>{
+  const excersicesRow: GpsTracker[] = await db.getAllAsync('SELECT * FROM GpsTracker');
+  setGpsdetailsFromDb(excersicesRow); 
+  setGpsdetailsFromDb(excersicesRow);
+        
 }
 
-const deleteExcercise = (index : number) :void =>{
-  db.transaction(// SijaintiAppi taulun id on sama kuin kuvvatJemma taulun merkintä_id
-  (tx : SQLite.SQLTransaction) => {
-    tx.executeSql(`DELETE FROM GpsTracker WHERE id = ${index}`, [], 
-      (_tx : SQLite.SQLTransaction, rs : SQLite.SQLResultSet) => {
-        
-      });
-  }, 
-  
-  (err: SQLite.SQLError) => console.log(err));
-  
+const deleteExcercise = async (index : number) :Promise<void> =>{
+  await db.runAsync('DELETE FROM GpsTracker WHERE value = $value', {index}); 
   getExcersicesFromDb()
 }
 
-const deletePhoto = (index : number) :void =>{
-  db.transaction(// SijaintiAppi taulun id on sama kuin kuvvatJemma taulun merkintä_id
-  (tx : SQLite.SQLTransaction) => {
-    tx.executeSql(`DELETE FROM Photos WHERE id = ${index}`, [], 
-      (_tx : SQLite.SQLTransaction, rs : SQLite.SQLResultSet) => {
-        
-      });
-  }, 
-  
-  (err: SQLite.SQLError) => console.log(err));
+const deletePhoto = async (index : number) :Promise<void> =>{
+  await db.runAsync('DELETE FROM Photos WHERE value = $value', {index}); // Binding named parameters from object 
   setShowDialogdelete(false)
   getPhotosDb()
 }

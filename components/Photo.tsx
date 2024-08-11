@@ -2,7 +2,7 @@ import { StyleSheet, Text, View, Image, ScrollView, StatusBar, Modal } from 'rea
 import {  Appbar, Button, Dialog, FAB, List, Portal, Provider, TextInput } from 'react-native-paper';
 import { useContext,  useEffect,  useMemo, useRef, useState } from 'react';
 import { JustAppContext, Photos } from '../context/JustAppContext';
-import { Camera } from 'expo-camera';
+import { Camera, CameraView } from 'expo-camera';
 import React from 'react';
 
 
@@ -70,7 +70,7 @@ const Photo : React.FC = () : React.ReactElement => {
       
     <View style={styles.container}>
       <Portal>
-      <Camera style={styles.cameraMode} ref={cameraRef } onMountError={()=>alert("ei")}>
+      <CameraView style={styles.cameraMode} ref={cameraRef } onMountError={()=>alert("ei")}>
 
       {(Boolean(info))
           ? <View><Text style={{ color: "#fff" }}>{info}</Text></View>
@@ -88,7 +88,7 @@ const Photo : React.FC = () : React.ReactElement => {
           label=""
           onPress={() => setOpenCamera(false)} />
 
-      </Camera></Portal>
+      </CameraView></Portal>
        </View> :
       
       
