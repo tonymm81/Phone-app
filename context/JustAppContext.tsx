@@ -25,7 +25,7 @@ db.execAsync( // tää on sqgl kysely sijainneista
                   );`);
   
 db.execAsync( // tää on sqgl kysely sijainneista
-    //tx.executeSql(`DROP TABLE Photos`); // tankataan dartsimatsin tulokset tänne
+     // tankataan dartsimatsin tulokset tänne
     
     `
     CREATE TABLE IF NOT EXISTS Photos (
@@ -98,6 +98,7 @@ interface Props {
 }
 
 const get_forecast = async (lat: any): Promise<any> => { // get forecast
+  console.log("coordinates", lat)
   const forecastresponse = await fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat[0]}&lon=${lat[1]}&appid=${weahter_api}&units=metric`); //https://xamkbit.azurewebsites.net/saaennuste/${userchoose}
   const responseData = forecastresponse.json();
   return responseData
@@ -106,9 +107,9 @@ const get_forecast = async (lat: any): Promise<any> => { // get forecast
 const get_location = async (city_name: string, country_code: string): Promise<any> => { // get location codes
   const locationresponse = await fetch(`http://api.openweathermap.org/geo/1.0/direct?q=${city_name},${country_code}&limit=${5}&appid=${weahter_api}`);
   const responseDataLocation = await locationresponse.json();
-  console.log("json", responseDataLocation[0]["lat"])
+ 
   if (responseDataLocation) {
-
+    console.log("json", responseDataLocation)
       let latitude = responseDataLocation[0]["lat"]
       let lonngitude = responseDataLocation[0]["lon"]
       console.log("details", latitude, lonngitude)
@@ -163,6 +164,7 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
   const get_location_user = async (userFeed : string) =>{ // here we get location Coordinates
     setCityForecast(userFeed)
     let location_lat = await get_location(userFeed, "fi")
+    console.log("user feed based location", location_lat)
     return location_lat 
   }
   const getForecatasUser = async (userFeed : string) =>{ // Here we get forrecast what based on given coordinates
@@ -200,7 +202,7 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
       return false;
     }else{
       let locationTemp = await Location.getCurrentPositionAsync({});
-      //console.log("this location",locationTemp)
+      console.log("this location",locationTemp)
       setLocation(locationTemp);
       setTimeout(()=> {setLocation(locationTemp)}, 500)
 
@@ -214,17 +216,31 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
   const save_forecast_db = async (wholeForecast : any): Promise<void> =>{
     if (Object.keys(wholeForecast).length > 0){
       deleteForecast()
+      const statement = await db.prepareAsync(`INSERT INTO forecastOld (City, timestamp, max_temp, min_temp, description, icon) VALUES ($City, $timestamp, $max_temp, $min_temp, $description, $icon)`)
+      try {
       for (let i = 0; i < Object.keys(wholeForecast).length; i++){
       
           if (wholeForecast.city.name === undefined ){
             wholeForecast.city.name = ""
           }
+          let result = statement.executeAsync({City: `${wholeForecast.city.name}`, 
+                                              timestamp:`${wholeForecast['list'][i]['dt']}`, 
+                                              max_temp:`${wholeForecast['list'][i]['main']['temp_max']}`,
+                                              min_temp:`${wholeForecast['list'][i]['main']['temp_min']}`,
+                                              description:`${wholeForecast['list'][i]['weather'][0]['main']}`,
+                                              icon:`${wholeForecast['list'][i]['main']['temp_min'] },${wholeForecast['list'][i]['weather'][0]['main']},${ wholeForecast['list'][i]['weather'][0]['icon']}`})
+          console.log("forecast result", result)
+          //await db.execAsync(`INSERT INTO forecastOld (City, timestamp, max_temp, min_temp, description, icon) VALUES (${wholeForecast.city.name},${wholeForecast['list'][i]['dt']},${ wholeForecast['list'][i]['main']['temp_max']},${wholeForecast['list'][i]['main']['temp_min'] },${wholeForecast['list'][i]['weather'][0]['main']},${ wholeForecast['list'][i]['weather'][0]['icon']});`, 
+            //)
+      }
+     
           
-          await db.execAsync(`INSERT INTO forecastOld (City, timestamp, max_temp, min_temp, description, icon) VALUES (${wholeForecast.city.name},${wholeForecast['list'][i]['dt']},${ wholeForecast['list'][i]['main']['temp_max']},${wholeForecast['list'][i]['main']['temp_min'] },${wholeForecast['list'][i]['weather'][0]['main']},${ wholeForecast['list'][i]['weather'][0]['icon']});`, 
-            )
-          searchForecastDB(); // tällä synkataan tietokanta lisäyksen jälkeen
+    }
+    finally {
+      await statement.finalizeAsync();
     }
   }
+  searchForecastDB(); // tällä synkataan tietokanta lisäyksen jälkeen
 }
 const searchForecastDB = async (): Promise<void> =>{
   const allRows: forecastOld[] = await db.getAllAsync('SELECT * FROM forecastOld');
@@ -263,47 +279,32 @@ const takePhoto = async (): Promise<void> => { // räpsitään kuva
 const savePhotoToDb = async (imagetext : string, headliner : string) : Promise<void> =>{
   getPhoneLocation()
   if (location?.coords.latitude  && location.coords.longitude && location.timestamp && savedPicture){
-    console.log("db statement", headliner, imagetext, location.coords.longitude, location.coords.latitude, savedPicture.uri, location.timestamp)
+    //console.log("db statement", headliner, imagetext, location.coords.longitude, location.coords.latitude, savedPicture.uri, location.timestamp)
     const statement = await db.prepareAsync(
       'INSERT INTO Photos (name, imageText, location_lon, location_lat, Device_path, time_photo) VALUES ($name, $imageText, $location_lon, $location_lat, $Device_path, $time_photo)'
     );
     try {
-      let result = await statement.executeAsync({ $name: `${headliner}`, $imageText: `${location.coords.longitude}`, $location_lat:` ${location.coords.latitude}`,$Device_path:`${savedPicture.uri }`,$time_photo : ` ${ location.timestamp}`});
+      let result = await statement.executeAsync({ $name: `${headliner}`, $imageText:`${imagetext}`, location_lon:`${location.coords.longitude}`, $location_lat:` ${location.coords.latitude}`,$Device_path:`${savedPicture.uri }`,$time_photo : ` ${ location.timestamp}`});
       console.log('bbb and 101:', result.lastInsertRowId, result.changes, result);
     
      
     } finally {
       await statement.finalizeAsync();
-    }
-    
-   /* try {
-      const statement = await db.prepareAsync( // tankataan kantaan otettu kuva
-        `INSERT INTO Photos (name, imageText, location_lon, location_lat, Device_path, 
-        time_photo) VALUES (${headliner}, 
-        ${imagetext}, 
-        ${location.coords.longitude}, 
-        ${location.coords.latitude}, 
-        ${savedPicture.uri }, 
-        ${ location.timestamp})`)
-      console.log("statement db photos", statement)    
       setShowDialogPhoto(false)
       getPhotosDb()
-
     }
-    catch(error){
-      console.log("error photos ", error)
-    }*/
     }else{
       console.log("If clause failed on photos")
     }
   
 }
 const getPhotosDb = async () :Promise<void> =>{
+  //db.execAsync(`DROP TABLE Photos`);
   const photosRow: Photos[] = await db.getAllAsync('SELECT * FROM Photos');
   setPhotosFromDb(photosRow); 
   setTimeout(() => {setPhotosFromDb(photosRow)}, 800)
   setPhotosFromDb(photosRow);
-  console.log("is there any images", photosFromDb)
+  //console.log("is there any images", photosRow)
 }
 
 const saveExcersiceToDb = (excersiceName : string, startTime : number, stopTime: number,locationStart : Location.LocationObject, locationEnd :  Location.LocationObject, speed: number, locationResult : number) : void =>{
