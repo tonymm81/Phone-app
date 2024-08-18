@@ -42,8 +42,10 @@ const Tracker : React.FC = () : React.ReactElement => {
     }
     useEffect(() => {
       getPhoneLocation()
+      console.log("location on client side", location, gpsdetailsFromDb)
       if ( location === undefined){
         getPhoneLocation()
+        console.log("location on client side after if", location, gpsdetailsFromDb)
       }
 
   }, []);
@@ -252,24 +254,24 @@ const Tracker : React.FC = () : React.ReactElement => {
                      <ListItem key={excercise.sessionName} bottomDivider>
 
                        <ListItem.Content style={styles.listView}>
-                         <ListItem.Title>excercise name: {excercise.sessionName} 
-                                          Distance : {excercise.travelDistance.toFixed(2)} meters
+                         <ListItem.Title>{"excercise name:"} {excercise.sessionName} 
+                                        { " Distance :"} {excercise.travelDistance.toFixed(2)}{" meters"}
                           </ListItem.Title>
 
-                         <ListItem.Subtitle>avarage speed : {excercise.avarageSpeed.toFixed(2)}
+                         <ListItem.Subtitle>{"avarage speed :"} {excercise.avarageSpeed.toFixed(2)}
                           </ListItem.Subtitle>
 
-                         <ListItem.Subtitle>locatin start latitude: {excercise.location_start_lat}
-                                             and longitude: {excercise.location_start_lon}
+                         <ListItem.Subtitle>{"locatin start latitude:"} {excercise.location_start_lat}
+                                            {" and longitude:"} {excercise.location_start_lon}
                             </ListItem.Subtitle>
 
-                         <ListItem.Subtitle>locatin start latitude: {excercise.location_end_lat} 
-                                            and longitude: {excercise.location_end_lon}
+                         <ListItem.Subtitle>{"locatin start latitude:"} {excercise.location_end_lat} 
+                                            {"and longitude:"} {excercise.location_end_lon}
                             </ListItem.Subtitle>
 
-                         <ListItem.Subtitle>Time start {new Date(excercise.time_gps_start).toLocaleString()}
-                                             and end time: {new Date(excercise.time_gps_end).toLocaleString()} 
-                                             excercise last: {Math.floor(new Date(excercise.time_gps_end).getTime() 
+                         <ListItem.Subtitle>{"Time start"} {new Date(excercise.time_gps_start).toLocaleString()}
+                                            {" and end time:"} {new Date(excercise.time_gps_end).toLocaleString()} 
+                                             {"excercise last:"} {Math.floor(new Date(excercise.time_gps_end).getTime() 
                                                               - new Date(excercise.time_gps_start).getTime()) / 60000}
                               </ListItem.Subtitle>
                        </ListItem.Content>

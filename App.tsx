@@ -8,6 +8,7 @@ import Photo from './components/Photo';
 import Tracker from './components/Tracker';
 import StartPage from './components/StartPage';
 import { JustAppProvider } from './context/JustAppContext';
+import 'react-native-reanimated';
 
 
 export default function App() {
