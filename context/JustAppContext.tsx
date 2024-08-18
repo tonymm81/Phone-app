@@ -109,10 +109,10 @@ const get_location = async (city_name: string, country_code: string): Promise<an
   const responseDataLocation = await locationresponse.json();
  
   if (responseDataLocation) {
-    console.log("json", responseDataLocation)
+    //console.log("json", responseDataLocation)
       let latitude = responseDataLocation[0]["lat"]
       let lonngitude = responseDataLocation[0]["lon"]
-      console.log("details", latitude, lonngitude)
+      //console.log("details", latitude, lonngitude)
       return [latitude, lonngitude]
   }
 
@@ -165,14 +165,15 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
   const get_location_user = async (userFeed : string) =>{ // here we get location Coordinates
     setCityForecast(userFeed)
     let location_lat = await get_location(userFeed, "fi")
-    console.log("user feed based location", location_lat)
+    //console.log("user feed based location", location_lat)
     return location_lat 
   }
   const getForecatasUser = async (userFeed : string) =>{ // Here we get forrecast what based on given coordinates
     if (allowForecast === true){
+      //console.log("api key", weahter_api)
       let location_code = await get_location_user(userFeed)
       let getForecast = await get_forecast(location_code)
-      //console.log("from context", getForecast)
+      console.log("from context", getForecast)
       save_forecast_db(getForecast)
       setAllowForecast(false)
       setShowDialog(false)
@@ -203,7 +204,7 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
       return false;
     }else{
       let locationTemp = await Location.getCurrentPositionAsync({});
-      console.log("this location",locationTemp)
+      //console.log("this location",locationTemp)
       setLocation(locationTemp);
       setTimeout(()=> {setLocation(locationTemp)}, 500)
 
@@ -224,13 +225,13 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
           if (wholeForecast.city.name === undefined ){
             wholeForecast.city.name = ""
           }
-          let result = statement.executeAsync({City: `${wholeForecast.city.name}`, 
-                                              timestamp:`${wholeForecast['list'][i]['dt']}`, 
-                                              max_temp:`${wholeForecast['list'][i]['main']['temp_max']}`,
-                                              min_temp:`${wholeForecast['list'][i]['main']['temp_min']}`,
-                                              description:`${wholeForecast['list'][i]['weather'][0]['main']}`,
-                                              icon:`${wholeForecast['list'][i]['main']['temp_min'] },${wholeForecast['list'][i]['weather'][0]['main']},${ wholeForecast['list'][i]['weather'][0]['icon']}`})
-          console.log("forecast result", result)
+          let result = statement.executeAsync({$City: `${wholeForecast.city.name}`, 
+                                              $timestamp:`${wholeForecast['list'][i]['dt']}`, 
+                                              $max_temp:`${wholeForecast['list'][i]['main']['temp_max']}`,
+                                              $min_temp:`${wholeForecast['list'][i]['main']['temp_min']}`,
+                                              $description:`${wholeForecast['list'][i]['weather'][0]['main']}`,
+                                              $icon:`${ wholeForecast['list'][i]['weather'][0]['icon']}`})
+          //console.log("forecast result", result)
           //await db.execAsync(`INSERT INTO forecastOld (City, timestamp, max_temp, min_temp, description, icon) VALUES (${wholeForecast.city.name},${wholeForecast['list'][i]['dt']},${ wholeForecast['list'][i]['main']['temp_max']},${wholeForecast['list'][i]['main']['temp_min'] },${wholeForecast['list'][i]['weather'][0]['main']},${ wholeForecast['list'][i]['weather'][0]['icon']});`, 
             //)
       }
@@ -255,7 +256,7 @@ const startTheCamera = async (): Promise<void> => {// käynnistä kamera ja kysy
   
   if (!allowTakePhoto) {
     const cameraPermission: PermissionResponse = await Camera.requestCameraPermissionsAsync();
-    console.log(cameraPermission.granted, cameraPermission)
+    //console.log(cameraPermission.granted, cameraPermission)
     setOpenCamera(cameraPermission.granted)
     setInfo((!cameraPermission.granted) ? "No permission to use a camera." : "")
     setAllowTakePhoto(true)
@@ -286,7 +287,7 @@ const savePhotoToDb = async (imagetext : string, headliner : string) : Promise<v
     );
     try {
       let result = await statement.executeAsync({ $name: `${headliner}`, $imageText:`${imagetext}`, location_lon:`${location.coords.longitude}`, $location_lat:` ${location.coords.latitude}`,$Device_path:`${savedPicture.uri }`,$time_photo : ` ${ location.timestamp}`});
-      console.log('bbb and 101:', result.lastInsertRowId, result.changes, result);
+      //console.log('bbb and 101:', result.lastInsertRowId, result.changes, result);
     
      
     } finally {
@@ -310,9 +311,9 @@ const getPhotosDb = async () :Promise<void> =>{
 
 const saveExcersiceToDb = async (excersiceName : string, startTime : number, stopTime: number,locationStart : Location.LocationObject, locationEnd :  Location.LocationObject, speed: number, locationResult : number) : Promise<void> =>{
   getPhoneLocation()
-  console.log("is it even try to save")
+  //console.log("is it even try to save")
   if (locationStart?.coords.latitude  && locationStart.coords.longitude){
-    console.log("is it even try to save if clause", excersiceName, startTime, stopTime, locationStart, locationEnd, speed, )
+    //console.log("is it even try to save if clause", excersiceName, startTime, stopTime, locationStart, locationEnd, speed, )
     const statement = await db.prepareAsync(
       'INSERT INTO GpsTracker (sessionName, time_gps_start, time_gps_end, avarageSpeed, location_start_lat, location_start_lon, location_end_lat, location_end_lon, travelDistance) VALUES ($sessionName, $time_gps_start, $time_gps_end, $avarageSpeed, $location_start_lat, $location_start_lon, $location_end_lat, $location_end_lon, $travelDistance)'
   );
