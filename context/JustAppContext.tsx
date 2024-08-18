@@ -54,7 +54,7 @@ db.execAsync( // tää on sqgl kysely sijainneista
                     location_end_lon FLOAT,
                     travelDistance FLOAt
 
-                  );`);
+                  )`);
   
 
 
@@ -152,6 +152,7 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
     if (forecalsDB === undefined){
       searchForecastDB()
     }
+    //db.execAsync(`DROP TABLE GpsTracker`);
     getExcersicesFromDb()
     if (gpsdetailsFromDb === undefined){
       getExcersicesFromDb()
@@ -307,14 +308,45 @@ const getPhotosDb = async () :Promise<void> =>{
   //console.log("is there any images", photosRow)
 }
 
-const saveExcersiceToDb = (excersiceName : string, startTime : number, stopTime: number,locationStart : Location.LocationObject, locationEnd :  Location.LocationObject, speed: number, locationResult : number) : void =>{
+const saveExcersiceToDb = async (excersiceName : string, startTime : number, stopTime: number,locationStart : Location.LocationObject, locationEnd :  Location.LocationObject, speed: number, locationResult : number) : Promise<void> =>{
   getPhoneLocation()
+  console.log("is it even try to save")
   if (locationStart?.coords.latitude  && locationStart.coords.longitude){
+    console.log("is it even try to save if clause", excersiceName, startTime, stopTime, locationStart, locationEnd, speed, )
+    const statement = await db.prepareAsync(
+      'INSERT INTO GpsTracker (sessionName, time_gps_start, time_gps_end, avarageSpeed, location_start_lat, location_start_lon, location_end_lat, location_end_lon, travelDistance) VALUES ($sessionName, $time_gps_start, $time_gps_end, $avarageSpeed, $location_start_lat, $location_start_lon, $location_end_lat, $location_end_lon, $travelDistance)'
+  );
+    console.log("statement", statement)
+    try {
+      let result = await statement.executeAsync({
+        $sessionName: `${excersiceName}`,
+        $time_gps_start: `${startTime}`,
+        $time_gps_end: `${stopTime}`,
+        $avarageSpeed: `${speed}`,
+        $location_start_lat: `${locationStart.coords.latitude}`,
+        $location_start_lon: `${locationStart.coords.longitude}`,
+        $location_end_lat: `${locationEnd.coords.latitude}`,
+        $location_end_lon: `${locationEnd.coords.longitude}`,
+        $travelDistance: `${locationResult}`
+    });
+
+      console.log('bbb and 101:', result.lastInsertRowId, result.changes, result);
     
-  db.execAsync( // tankataan kantaan otettu kuva
-        `INSERT INTO GpsTracker (sessionName, time_gps_start, time_gps_end, avarageSpeed, location_start_lat, location_start_lon, location_end_lat,location_end_lon, travelDistance ) VALUES (${excersiceName}, ${startTime}, ${stopTime}, ${speed}, ${locationStart.coords.latitude}, ${locationStart.coords.longitude}, ${locationEnd.coords.latitude}, ${ locationEnd.coords.longitude}, ${locationResult});`)   
+     
+    } 
+    catch (e){
+      console.log("db error", e)
+    }
+    finally {
+      await statement.finalizeAsync();
+      //setShowDialogPhoto(false)
+      //getPhotosDb()
+      await getExcersicesFromDb()
+    }
+ // db.execAsync( // tankataan kantaan otettu kuva
+        //`INSERT INTO GpsTracker (sessionName, time_gps_start, time_gps_end, avarageSpeed, location_start_lat, location_start_lon, location_end_lat,location_end_lon, travelDistance ) VALUES (${excersiceName}, ${startTime}, ${stopTime}, ${speed}, ${locationStart.coords.latitude}, ${locationStart.coords.longitude}, ${locationEnd.coords.latitude}, ${ locationEnd.coords.longitude}, ${locationResult});`)   
       console.log("tallennettiinko suoritus")
-      getExcersicesFromDb()
+      
     }
 }
 
@@ -326,12 +358,12 @@ const getExcersicesFromDb = async (): Promise<void> =>{
 }
 
 const deleteExcercise = async (index : number) :Promise<void> =>{
-  await db.runAsync('DELETE FROM GpsTracker WHERE value = $value', {index}); 
+  await db.runAsync('DELETE FROM GpsTracker WHERE id = $value', {$value: index}); 
   getExcersicesFromDb()
 }
 
 const deletePhoto = async (index : number) :Promise<void> =>{
-  await db.runAsync('DELETE FROM Photos WHERE value = $value', {index}); // Binding named parameters from object 
+  await db.runAsync('DELETE FROM Photos WHERE id = $value', {$value: index}); // Binding named parameters from object 
   setShowDialogdelete(false)
   getPhotosDb()
 }
