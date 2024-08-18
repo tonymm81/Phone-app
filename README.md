@@ -88,3 +88,5 @@ Gps is working now and it is calculating the distance between start and end of e
  - That caused a database error, because the database syntax was changed in expo sq-lite. And also Camera module have changed.
  - I found the workin version of how to insert into daabase some values, but it gives error from missin unique ke and i have in database id autoincrement value for id.
  - Now the photos app is working fine and it saves to database, after i change all the database handling srcipt. But in forecast app, it gives error to wrong api key. Now i have to figure out, what is broken now.
+
+ - Finally, this is working now. Update causes a lot of work, but now its working. Lets plan wlan devices controller to this phone app. I have to handle python scripts from typescript.
