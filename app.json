@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "lopputyoso3",
+    "name": "Just a phone app",
     "slug": "lopputyoso3",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -31,6 +31,16 @@
       "eas": {
         "projectId": "bbbb9e30-7baf-4ada-9850-c4dce766fb3e"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ]
   }
 }

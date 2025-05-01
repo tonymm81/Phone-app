@@ -9,6 +9,7 @@ import Tracker from './components/Tracker';
 import StartPage from './components/StartPage';
 import { JustAppProvider } from './context/JustAppContext';
 import 'react-native-reanimated';
+import WlanController from './components/WlanController';
 
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
   const [chooseStartView, setChooseStartView] = useState<boolean>(true)
   const [chooseForecastView, setChooseForecastView] = useState<boolean>(true)
   const [choosePhotosView, setChoosePhotosView] = useState<boolean>(true)
+  const [chooseWlanControlView, setChooseWlanControlView] = useState<boolean>(true)
  
 
   const whereShallWeNavigate = (thePath: string): void => {// here is aaplication navigate
@@ -42,6 +44,12 @@ export default function App() {
       setChooseStartView(false)
 
       setChoosePhotosView(true)
+      closeMenu()
+    }
+    if (thePath === "WlanController") {
+      setChooseStartView(false)
+      setChooseWlanControlView(false)
+      setChoosePhotosView(false)
       closeMenu()
     }
     if (thePath === "tracker") {
@@ -93,7 +101,10 @@ export default function App() {
                   title="Go gps tracker"
                   key="4"
                   leadingIcon="crosshairs-gps" />
-
+                 <Menu.Item onPress={() => whereShallWeNavigate("WlanController")}
+                  title="Control wlan devices"
+                  key="4"
+                  leadingIcon="biohazard" />
 
 
               </Menu>
@@ -114,7 +125,9 @@ export default function App() {
             choosePhotosView ?
               <Photo />
               :
-              <Tracker />}
+              chooseWlanControlView ? <Tracker /> 
+              : <WlanController/> 
+            }
 
         </ScrollView>
       </JustAppProvider>
