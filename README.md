@@ -1,4 +1,4 @@
-# Sovellusohjelmointi 3 lopputyö
+# Phone app
 
 ## version 100
 - Starting to do github some projects and issues. I organize the issues to milestones and next thing is starting to build an base of app.
@@ -90,3 +90,15 @@ Gps is working now and it is calculating the distance between start and end of e
  - Now the photos app is working fine and it saves to database, after i change all the database handling srcipt. But in forecast app, it gives error to wrong api key. Now i have to figure out, what is broken now.
 
  - Finally, this is working now. Update causes a lot of work, but now its working. Lets plan wlan devices controller to this phone app. I have to handle python scripts from typescript.
+
+ ## version 112
+ - I started to do wlan devices controller but its little bit difficult to excecute the python script from typescript. React native downt have any working solution about this ,so i have to plan this littlebit.
+
+ - Now I am testing the mqtt library.  In React typescript we need to communicate with websocket. I made tha table project also flask server, what should take the mqtt messages and send back responce.
+ - There is major problem related of connect to that python flask server and it requires also websocket listener to rasbperry pi. I have opened the firewall ports and still not getting connection to raspberry pi. Perhaps the
+ port is really not visible.
+
+ - I give up with mqtt. It doesnt work. Every time when phone or desktop test app tryis to connect flask server it gives 192.168.68.126 - - [01/May/2025 17:20:08] "GET //ws:5000/mqtt HTTP/1.1" 404 356 0.002189.
+
+ - I have to think some another communicating method. Perhaps return to https request or bluetooth, i dont know..
+ 
