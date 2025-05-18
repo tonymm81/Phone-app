@@ -103,7 +103,7 @@ export default function App() {
                   leadingIcon="crosshairs-gps" />
                  <Menu.Item onPress={() => whereShallWeNavigate("WlanController")}
                   title="Control wlan devices"
-                  key="4"
+                  key="5"
                   leadingIcon="biohazard" />
 
 

@@ -1,5 +1,7 @@
 {
   "expo": {
+
+    "newArchEnabled": true,
     "name": "Just a phone app",
     "slug": "lopputyoso3",
     "version": "1.0.0",
@@ -39,6 +41,14 @@
           "android": {
             "usesCleartextTraffic": true
           }
+        }
+      ],
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": true,
+          "modes": ["peripheral", "central"],
+          "bluetoothAlwaysPermission": "Allow $(PRODUCT_NAME) to connect to Bluetooth devices"
         }
       ]
     ]

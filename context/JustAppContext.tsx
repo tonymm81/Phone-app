@@ -127,7 +127,7 @@ export const JustAppProvider: React.FC<Props> = (props: Props): React.ReactEleme
   const [location, setLocation] = useState<Location.LocationObject>();
   const [errorMsg, setErrorMsg] = useState<string>("");
 
-  const cameraRef: any = useRef<CameraView>();// cameras values
+  const cameraRef = useRef<CameraView | null>(null);// cameras values
   const [info, setInfo] = useState<string>()
   const [openCamera, setOpenCamera] = useState<boolean>(false)
   const [photosFromDb, setPhotosFromDb] = useState<Photos[]>([]) 
@@ -269,12 +269,17 @@ const startTheCamera = async (): Promise<void> => {// käynnistä kamera ja kysy
 const takePhoto = async (): Promise<void> => { // räpsitään kuva
 
   setInfo("...Just wait a moment")
-  const pohtoTemp: CameraCapturedPicture = await cameraRef.current.takePictureAsync()  
-  setOpenCamera(false)// kuvaustila pois ja haetaan kannan kuvat
+  if (cameraRef.current) {
+  const photoTemp: CameraCapturedPicture = await cameraRef.current.takePictureAsync();
+   setOpenCamera(false)// kuvaustila pois ja haetaan kannan kuvat
   setInfo("")
   //console.log("ca mera", pohtoTemp)
-  setSavedPicture(pohtoTemp)
+  setSavedPicture(photoTemp)
   setShowDialogPhoto(true)
+} else {
+  console.error("Virhe: cameraRef.current on null!");
+}  
+ 
   //haeKuvat();
 }
 

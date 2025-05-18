@@ -101,4 +101,8 @@ Gps is working now and it is calculating the distance between start and end of e
  - I give up with mqtt. It doesnt work. Every time when phone or desktop test app tryis to connect flask server it gives 192.168.68.126 - - [01/May/2025 17:20:08] "GET //ws:5000/mqtt HTTP/1.1" 404 356 0.002189.
 
  - I have to think some another communicating method. Perhaps return to https request or bluetooth, i dont know..
+
+ ## version 113
+
+ - Next I try to create nginx server to raspberry pi and I use the https routing with certificates. But no hope to connect rasbperry pi, what is same network. I tested that curl -k https://192.168.68.201:5000/data command works fine in computers terminal or phones termilan. Both request goes correct but react native expo blocks some how this connection, and it just wont work. When I try to connect from expo, it give network error. No matter if you build the phone applicalion or not. Not working.
  
