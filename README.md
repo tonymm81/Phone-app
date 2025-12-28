@@ -105,4 +105,10 @@ Gps is working now and it is calculating the distance between start and end of e
  ## version 113
 
  - Next I try to create nginx server to raspberry pi and I use the https routing with certificates. But no hope to connect rasbperry pi, what is same network. I tested that curl -k https://192.168.68.201:5000/data command works fine in computers terminal or phones termilan. Both request goes correct but react native expo blocks some how this connection, and it just wont work. When I try to connect from expo, it give network error. No matter if you build the phone applicalion or not. Not working.
+
+ ### plan to next version
+
+- Remove the wlan controller part from this program. There is no need to develope it. Clean up the ui littlebit.
+- Update the dependencies
  
+ - Or deprecate this project.
